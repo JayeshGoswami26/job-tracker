@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ApplicationForm } from "./ApplicationForm";
-import { ApplicationsTable, TableEmptyState } from "./ApplicationsTable";
+import { ApplicationsTable } from "./ApplicationsTable";
 import { FollowUpQueue } from "./FollowUpQueue";
 import { StatsBar } from "./StatsBar";
 import { StatusTabs, type TabItem } from "./StatusTabs";
@@ -15,9 +16,8 @@ import { useApplications } from "@/hooks/useApplications";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { useToast } from "@/hooks/useToast";
 import { downloadCSV, toCSV } from "@/lib/csv";
-import { cn } from "@/lib/cn";
 import { FOLLOW_DAYS, addDays, today } from "@/lib/date";
-import { STATUSES, type App, type Draft, type Status } from "@/lib/types";
+import { SOURCES, STATUSES, type App, type Draft, type Status } from "@/lib/types";
 
 const CSV_HEADERS = [
   "Company", "Role", "Source", "Work mode", "Salary", "Location", "Date applied",
@@ -27,7 +27,13 @@ const CSV_HEADERS = [
 type SheetState = { editing: App | null; presetStatus?: Status; focusReason?: boolean } | null;
 
 export default function Tracker() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const toast = useToast();
+  // Defaults only — the URL is applied in the effect below after mount, so the
+  // hydration render never reads searchParams (render-time reads stall reveal
+  // of the streamed Suspense boundary in this Next version).
   const [statusFilter, setStatusFilter] = useState("Active");
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -43,7 +49,21 @@ export default function Tracker() {
     return () => window.clearTimeout(timer);
   }, [query]);
 
-  const { apps, summary, pagination, loaded, loading, loadError, create, update, remove } = useApplications({
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const status = searchParams.get("status");
+      const source = searchParams.get("source");
+      const nextSort = searchParams.get("sort") as SortKey | null;
+      setQuery(searchParams.get("search") || "");
+      setStatusFilter(status && (["Active", "All", ...STATUSES] as string[]).includes(status) ? status : "Active");
+      setSourceFilter(source && (SOURCES as readonly string[]).includes(source) ? source : "");
+      setSort(nextSort && ["updated", "applied", "followUp", "company"].includes(nextSort) ? nextSort : "updated");
+      setPage(Math.max(1, Number(searchParams.get("page")) || 1));
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [searchParams]);
+
+  const { apps, summary, pagination, loaded, loading, error, retry, create, update, remove } = useApplications({
     query: debouncedQuery,
     status: statusFilter,
     source: sourceFilter,
@@ -80,6 +100,25 @@ export default function Tracker() {
 
   function resetPage() {
     setPage(1);
+  }
+
+  function updateUrl(changes: Record<string, string | number>) {
+    const next = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(changes)) {
+      if (value === "" || (key === "sort" && value === "updated")) next.delete(key);
+      else next.set(key, String(value));
+    }
+    router.replace(`${pathname}${next.toString() ? `?${next.toString()}` : ""}`, { scroll: false });
+  }
+
+  function clearFilters() {
+    setQuery("");
+    setDebouncedQuery("");
+    setStatusFilter("Active");
+    setSourceFilter("");
+    setSort("updated");
+    setPage(1);
+    updateUrl({ search: "", status: "Active", source: "", sort: "updated", page: 1 });
   }
 
   function exportCsv() {
@@ -153,8 +192,6 @@ export default function Tracker() {
         </div>
       </header>
 
-      {loadError && <div className="rounded-md border border-line bg-subtle px-3.5 py-2 text-xs text-rose-400">{loadError}</div>}
-
       <StatsBar
         dueCount={summary.due.length}
         waitingCount={summary.active}
@@ -180,7 +217,7 @@ export default function Tracker() {
 
       <section aria-label="All applications">
         <h2 className="mb-2.5 flex items-center gap-2 text-[11px] font-semibold tracking-wider text-muted uppercase select-none">
-          All applications <span className="font-mono text-xs tracking-normal text-fg">{list.length}</span>
+          All applications <span className="font-mono text-xs tracking-normal text-fg">{pagination.total}</span>
         </h2>
 
         <TableToolbar
@@ -188,16 +225,19 @@ export default function Tracker() {
           onQuery={(value) => {
             setQuery(value);
             resetPage();
+            updateUrl({ search: value, page: 1 });
           }}
           source={sourceFilter}
           onSource={(value) => {
             setSourceFilter(value);
             resetPage();
+            updateUrl({ source: value, page: 1 });
           }}
           sort={sort}
           onSort={(value) => {
             setSort(value);
             resetPage();
+            updateUrl({ sort: value, page: 1 });
           }}
           onExport={exportCsv}
           searchRef={searchRef}
@@ -209,32 +249,49 @@ export default function Tracker() {
           onChange={(value) => {
             setStatusFilter(value);
             resetPage();
+            updateUrl({ status: value, page: 1 });
           }}
           className="mb-3"
         />
 
-        {!loaded && <TableEmptyState loaded={false} total={summary.total} />}
-        {loaded && summary.total > 0 && list.length === 0 && (
-          <div className="rounded-lg border border-line bg-surface/40 p-8 text-center text-xs text-muted">
-            No applications match the current filters.
-          </div>
-        )}
-        {list.length > 0 && (
-          <div className={cn("transition-opacity duration-150", loading && "opacity-60")} aria-busy={loading}>
-            <ApplicationsTable apps={list} onOpen={(a) => setSheet({ editing: a })} onStatusChange={handleStatusChange} />
-          </div>
-        )}
+        <ApplicationsTable
+          apps={list}
+          loaded={loaded}
+          loading={loading}
+          error={error}
+          emptyKind={summary.total === 0 ? "database" : "filters"}
+          onRetry={retry}
+          onEmptyAction={summary.total === 0 ? () => setSheet({ editing: null }) : clearFilters}
+          onOpen={(a) => setSheet({ editing: a })}
+          onStatusChange={handleStatusChange}
+        />
         {loaded && pagination.totalPages > 1 && (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
             <span>
               Showing {(pagination.page - 1) * pagination.pageSize + 1}–{Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total}
             </span>
             <div className="flex items-center gap-2">
-              <Button variant="default" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>
+              <Button
+                variant="default"
+                disabled={page <= 1}
+                onClick={() => {
+                  const nextPage = page - 1;
+                  setPage(nextPage);
+                  updateUrl({ page: nextPage });
+                }}
+              >
                 Previous
               </Button>
               <span className="font-mono tabular-nums">{pagination.page} / {pagination.totalPages}</span>
-              <Button variant="default" disabled={page >= pagination.totalPages} onClick={() => setPage((current) => current + 1)}>
+              <Button
+                variant="default"
+                disabled={page >= pagination.totalPages}
+                onClick={() => {
+                  const nextPage = page + 1;
+                  setPage(nextPage);
+                  updateUrl({ page: nextPage });
+                }}
+              >
                 Next
               </Button>
             </div>

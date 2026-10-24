@@ -55,11 +55,12 @@ export function useApplications(params: Params) {
       pageSize: String(params.pageSize),
     });
     setLoading(true);
+    setLoadError("");
     try {
       const response = await fetch(`/api/applications?${search.toString()}`, { cache: "no-store" });
       if (!response.ok) {
         const body = (await response.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error || "Could not load applications.");
+        throw new Error(`Server error: ${body.error || "Could not load applications."}`);
       }
       const data = (await response.json()) as ApplicationListResponse;
       if (currentRequest !== requestId.current) return false;
@@ -70,7 +71,12 @@ export function useApplications(params: Params) {
       return true;
     } catch (error) {
       if (currentRequest === requestId.current) {
-        setLoadError((error as Error).message || "Could not load applications. Check the server and reload.");
+        const message = error instanceof TypeError
+          ? "Network error. Check your connection and try again."
+          : error instanceof Error
+            ? error.message
+            : "Could not load applications. Check the server and try again.";
+        setLoadError(message);
       }
       return false;
     } finally {
@@ -129,5 +135,5 @@ export function useApplications(params: Params) {
     [load, toast],
   );
 
-  return { apps, summary, pagination, loaded, loading, loadError, create, update, remove };
+  return { apps, summary, pagination, loaded, loading, error: loadError, retry: load, loadError, create, update, remove };
 }
