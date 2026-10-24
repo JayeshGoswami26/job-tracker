@@ -16,7 +16,7 @@ type Props = {
 export function FollowUpQueue({ items, onFollowUp, onClose, onCopy, onOpen }: Props) {
   return (
     <section aria-label="Follow-ups">
-      <h2 className="mb-2.5 flex items-center gap-2 text-[11px] font-semibold tracking-wider text-muted uppercase select-none">
+      <h2 className="mb-2.5 flex items-center gap-2 text-[8.8px] font-semibold tracking-wider text-muted uppercase select-none">
         Follow up <span className="font-mono text-xs tracking-normal text-fg">{items.length}</span>
       </h2>
 
@@ -43,7 +43,7 @@ export function FollowUpQueue({ items, onFollowUp, onClose, onCopy, onOpen }: Pr
               >
                 <button type="button" onClick={() => onOpen(a)} className="min-w-0 cursor-pointer text-left">
                   <strong className="block text-xs font-semibold text-fg break-words hover:underline">{a.company}</strong>
-                  <small className="block text-[11.5px] text-muted break-words mt-0.5">
+                  <small className="block text-[9.2px] text-muted break-words mt-0.5">
                     {a.role}
                     {a.source ? ` · ${a.source}` : ""} · applied {fmt(a.applied)}
                   </small>

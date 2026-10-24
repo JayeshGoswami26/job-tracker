@@ -12,6 +12,7 @@ const TEXT_FIELDS = [
   "applied",
   "followUp",
   "contact",
+  "phone",
   "link",
   "notes",
   "rejectReason",
@@ -28,6 +29,7 @@ const BLANK: Draft = {
   status: "Applied",
   followUp: "",
   contact: "",
+  phone: "",
   link: "",
   notes: "",
   rejectReason: "",
@@ -91,12 +93,13 @@ function finalize(fields: Partial<Draft>, base: Draft): Draft {
 }
 
 function toApp(doc: ApplicationDocument): App {
-  const { _id, salary, workMode, ...rest } = doc;
+  const { _id, salary, workMode, phone, ...rest } = doc;
   return {
     ...rest,
     // Documents created before these fields existed have no stored value.
     salary: salary ?? "",
     workMode: workMode ?? "",
+    phone: phone ?? "",
     id: _id,
   };
 }

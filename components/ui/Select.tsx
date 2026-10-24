@@ -13,6 +13,7 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { ChevronDown } from "./icons";
+import { FieldShell } from "./FieldShell";
 
 export type SelectOption = { value: string; label: string; hint?: string };
 
@@ -23,10 +24,15 @@ type Props = {
   ariaLabel: string;
   /** Shown when value matches no option (e.g. the empty "All sources" case handled by caller). */
   placeholder?: string;
+  /** With `icon`, the trigger is borderless inside a shared shell, so pass no border classes here. */
   className?: string;
   popupClassName?: string;
   /** Custom trigger content (defaults to the selected label). */
   renderValue?: (option: SelectOption | null) => ReactNode;
+  /** Leading icon rendered in its own cell inside the border. */
+  icon?: ReactNode;
+  /** Toolbar sizing: 49px tall with 15px text. */
+  large?: boolean;
 };
 
 const POPUP_MAX = 240;
@@ -39,7 +45,7 @@ const FLIP_THRESHOLD = 220;
  * The popup is position:fixed anchored to the trigger so it is never clipped
  * by a scrollable Modal body, and flips up when the viewport bottom is near.
  */
-export function Select({ value, options, onChange, ariaLabel, placeholder = "Select…", className, popupClassName, renderValue }: Props) {
+export function Select({ value, options, onChange, ariaLabel, placeholder = "Select…", className, popupClassName, renderValue, icon, large = false }: Props) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const [style, setStyle] = useState<CSSProperties | null>(null);
@@ -190,6 +196,33 @@ export function Select({ value, options, onChange, ariaLabel, placeholder = "Sel
 
   const isFull = className?.includes("w-full");
 
+  const trigger = (
+    <button
+      ref={triggerRef}
+      type="button"
+      aria-haspopup="listbox"
+      aria-expanded={open}
+      aria-controls={open ? id : undefined}
+      aria-label={ariaLabel}
+      onClick={() => (open ? close(false) : openMenu())}
+      className={cn(
+        icon != null
+          ? "inline-flex h-full min-w-0 flex-1 items-center justify-between gap-1.5 px-4 text-[15px] text-fg cursor-pointer"
+          : large
+            ? "inline-flex h-[39.2px] max-w-full items-center justify-between gap-2.5 rounded-lg border border-line bg-surface px-4 text-[12px] font-medium cursor-pointer transition-colors hover:bg-subtle"
+            : "inline-flex h-9 max-w-full items-center justify-between gap-1.5 rounded-md border border-line bg-surface px-3 text-xs font-medium cursor-pointer transition-colors hover:bg-subtle hover:border-zinc-700/60",
+        className,
+      )}
+    >
+      {renderValue ? (
+        renderValue(selected)
+      ) : (
+        <span className={cn("truncate", !selected && "text-muted")}>{selected?.label ?? placeholder}</span>
+      )}
+      <ChevronDown className={cn("size-3 shrink-0 text-muted transition-transform", open && "rotate-180")} />
+    </button>
+  );
+
   return (
     <div
       ref={rootRef}
@@ -197,26 +230,13 @@ export function Select({ value, options, onChange, ariaLabel, placeholder = "Sel
       onKeyDown={onKey}
       onClick={(e) => e.stopPropagation()}
     >
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={open ? id : undefined}
-        aria-label={ariaLabel}
-        onClick={() => (open ? close(false) : openMenu())}
-        className={cn(
-          "inline-flex h-9 max-w-full items-center justify-between gap-1.5 rounded-md border border-line bg-surface px-3 text-xs font-medium cursor-pointer transition-colors hover:bg-subtle hover:border-zinc-700/60",
-          className,
-        )}
-      >
-        {renderValue ? (
-          renderValue(selected)
-        ) : (
-          <span className={cn("truncate", !selected && "text-muted")}>{selected?.label ?? placeholder}</span>
-        )}
-        <ChevronDown className={cn("size-3 shrink-0 text-muted transition-transform", open && "rotate-180")} />
-      </button>
+      {icon != null ? (
+        <FieldShell icon={icon} className={cn(isFull && "w-full")}>
+          {trigger}
+        </FieldShell>
+      ) : (
+        trigger
+      )}
       {open &&
         style &&
         createPortal(
@@ -249,7 +269,7 @@ export function Select({ value, options, onChange, ariaLabel, placeholder = "Sel
                 )}
               >
                 <span>{o.label}</span>
-                {o.hint && <span className="text-[11px] text-muted">{o.hint}</span>}
+                {o.hint && <span className="text-[8.8px] text-muted">{o.hint}</span>}
                 {o.value === value && <span className="text-fg font-semibold">✓</span>}
               </li>
             ))}

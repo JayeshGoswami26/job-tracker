@@ -36,6 +36,7 @@ export type Draft = {
   status: Status;
   followUp: string;
   contact: string;
+  phone: string;
   link: string;
   notes: string;
   rejectReason: string;

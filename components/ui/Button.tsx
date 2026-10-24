@@ -7,18 +7,24 @@ const variants: Record<ButtonVariant, string> = {
   primary: "bg-accent text-accent-fg border-accent hover:bg-accent-hover hover:border-accent-hover font-semibold shadow-xs",
   default: "bg-surface text-fg border-line hover:bg-subtle hover:border-zinc-700/60",
   quiet: "bg-transparent border-transparent text-muted hover:bg-subtle hover:text-fg",
-  danger: "bg-surface border-line text-status-rejected hover:bg-subtle hover:border-status-rejected/40",
+  danger: "bg-transparent border-status-rejected/40 text-status-rejected hover:bg-status-rejected/10 hover:border-status-rejected/60",
   confirm: "bg-status-rejected text-white border-status-rejected hover:opacity-90",
 };
 
-type Props = ComponentProps<"button"> & { variant?: ButtonVariant };
+const sizes = {
+  md: "h-9 rounded-md px-3 text-xs",
+  lg: "h-12 rounded-lg px-5 text-[12px]",
+};
 
-export function Button({ variant = "default", className, type = "button", ...rest }: Props) {
+type Props = ComponentProps<"button"> & { variant?: ButtonVariant; size?: keyof typeof sizes };
+
+export function Button({ variant = "default", size = "md", className, type = "button", ...rest }: Props) {
   return (
     <button
       type={type}
       className={cn(
-        "inline-flex h-9 items-center justify-center gap-1.5 rounded-md border px-3 text-xs font-medium whitespace-nowrap cursor-pointer transition-colors select-none",
+        "inline-flex items-center justify-center gap-1.5 border font-medium whitespace-nowrap cursor-pointer transition-colors select-none",
+        sizes[size],
         "disabled:pointer-events-none disabled:opacity-50",
         variants[variant],
         className,

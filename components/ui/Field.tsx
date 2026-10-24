@@ -12,10 +12,10 @@ type Props = {
 
 export function Field({ label, full, hint, children }: Props) {
   return (
-    <label className={cn("flex min-w-0 flex-col gap-1.5 text-xs font-medium text-muted", full && "sm:col-span-2")}>
-      <span className="text-fg/80">{label}</span>
+    <label className={cn("flex min-w-0 flex-col gap-2 text-[15px] font-medium text-muted", full && "sm:col-span-2")}>
+      <span className="text-fg/85">{label}</span>
       {children}
-      {hint != null && <span className="text-[11.5px] font-normal text-muted">{hint}</span>}
+      {hint != null && <span className="text-xs font-normal text-muted">{hint}</span>}
     </label>
   );
 }

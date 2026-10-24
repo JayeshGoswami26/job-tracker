@@ -35,9 +35,9 @@ export function ThemeToggle() {
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
       onClick={toggleTheme}
-      className="inline-flex size-9 items-center justify-center rounded-md border border-line bg-surface text-muted transition-colors hover:bg-subtle hover:text-fg"
+      className="inline-flex size-12 items-center justify-center rounded-lg border border-line bg-subtle text-muted transition-colors hover:bg-surface hover:text-fg"
     >
-      {isDark ? <BsEmojiSunglassesFill aria-hidden="true" className="size-4" /> : <BsEmojiSunglasses aria-hidden="true" className="size-4" />}
+      {isDark ? <BsEmojiSunglassesFill aria-hidden="true" className="size-5" /> : <BsEmojiSunglasses aria-hidden="true" className="size-5" />}
     </button>
   );
 }

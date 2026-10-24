@@ -71,7 +71,7 @@ export function StatusTabs({ tabs, activeId, onChange, className }: Props) {
       role="tablist"
       aria-label="Filter applications by status"
       className={cn(
-        "w-full min-w-0 overflow-x-auto rounded-lg border border-line bg-surface/50 p-1.5 [scrollbar-width:thin]",
+        "w-full min-w-0 overflow-x-auto rounded-xl border border-line bg-surface p-[5.6px] [scrollbar-width:thin]",
         className,
       )}
     >
@@ -79,7 +79,7 @@ export function StatusTabs({ tabs, activeId, onChange, className }: Props) {
         {indicator.ready && (
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute z-0 rounded-md border border-line bg-subtle shadow-sm transition-[transform,width] duration-200 ease-[cubic-bezier(0.2,0,0,1)]"
+            className="pointer-events-none absolute z-0 rounded-lg border border-tab-active-line bg-tab-active transition-[transform,width] duration-200 ease-[cubic-bezier(0.2,0,0,1)]"
             style={{
               transform: `translate3d(${indicator.left}px, ${indicator.top}px, 0)`,
               width: `${indicator.width}px`,
@@ -103,13 +103,21 @@ export function StatusTabs({ tabs, activeId, onChange, className }: Props) {
               tabIndex={isActive ? 0 : -1}
               onClick={() => onChange(tab.id)}
               className={cn(
-                "relative z-10 flex shrink-0 items-center justify-center whitespace-nowrap rounded-md border border-transparent px-2.5 py-1.5 text-sm font-medium cursor-pointer select-none md:px-3",
-                isActive ? "font-semibold text-fg" : "text-muted hover:bg-subtle/60 hover:text-fg",
+                "relative z-10 flex shrink-0 items-center whitespace-nowrap rounded-lg border border-transparent px-[15.2px] py-3 text-[12px] font-medium cursor-pointer select-none",
+                isActive ? "font-semibold text-fg" : "text-muted hover:text-fg",
               )}
             >
+              {isActive && <span aria-hidden="true" className="mr-2 inline-block size-2 rounded-full bg-status-applied" />}
               <span>{tab.label}</span>
               {tab.count != null && (
-                <span className={cn("ml-1.5 font-mono text-[11px] font-medium tabular-nums", isActive ? "text-fg font-semibold" : "text-muted opacity-80")}>
+                <span
+                  className={cn(
+                    "tabular-nums",
+                    isActive
+                      ? "ml-2.5 flex h-6 min-w-6 items-center justify-center rounded-md bg-tab-count px-1.5 text-[10.4px] font-semibold text-white"
+                      : "ml-2.5 text-[12px] font-normal",
+                  )}
+                >
                   {tab.count}
                 </span>
               )}

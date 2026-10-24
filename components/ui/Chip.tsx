@@ -25,7 +25,7 @@ export function Chip({ active, onClick, count, children }: Props) {
       {count != null && (
         <span
           className={cn(
-            "ml-1.5 font-mono text-[11px] tabular-nums",
+            "ml-1.5 font-mono text-[8.8px] tabular-nums",
             active ? "text-fg font-semibold" : "text-muted opacity-75",
           )}
         >

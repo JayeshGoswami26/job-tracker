@@ -2,15 +2,20 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { Button } from "./Button";
 import { X } from "./icons";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   title: string;
+  /** Muted line under the title. */
+  description?: string;
   children: ReactNode;
   className?: string;
+  /** Wider panel for forms with two-column sections. */
+  wide?: boolean;
+  /** Widest panel, for read-only detail views with multi-column cards. */
+  xwide?: boolean;
 };
 
 const FOCUSABLE =
@@ -22,7 +27,7 @@ const FOCUSABLE =
  * to the trigger, and body scroll lock. Escape/Tab are window listeners so React
  * handlers deeper in the tree can consume the event first.
  */
-export function Modal({ open, onClose, title, children, className }: Props) {
+export function Modal({ open, onClose, title, description, children, className, wide, xwide }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,15 +88,28 @@ export function Modal({ open, onClose, title, children, className }: Props) {
         aria-label={title}
         tabIndex={-1}
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100vh-48px)] w-[min(560px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-2xl outline-none",
+          "fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100vh-38.4px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-2xl outline-none",
+          xwide
+            ? "w-[min(768px,calc(100vw-25.6px))]"
+            : wide
+              ? "w-[min(544px,calc(100vw-25.6px))]"
+              : "w-[min(448px,calc(100vw-25.6px))]",
           className,
         )}
       >
-        <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
-          <h3 className="text-sm font-semibold tracking-tight text-fg">{title}</h3>
-          <Button variant="quiet" onClick={onClose} aria-label="Close" className="px-2 py-1.5 text-muted hover:text-fg">
+        <div className="flex items-center justify-between border-b border-line px-[18.4px] py-[14.4px]">
+          <div className="min-w-0">
+            <h3 className="text-[16px] leading-tight font-semibold text-fg">{title}</h3>
+            {description && <p className="mt-1 text-[12px] text-muted">{description}</p>}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-line bg-subtle text-muted transition-colors hover:text-fg"
+          >
             <X className="size-4" />
-          </Button>
+          </button>
         </div>
         {children}
       </div>

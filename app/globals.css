@@ -19,25 +19,43 @@
   --rejected: #e11d48;
   --closed: #71717a;
   --overdue: #e11d48;
+  --tile: #e0f2fe;
+  --tile-fg: #0369a1;
+  --applied-soft: rgb(2 132 199 / 0.12);
+  --applied-fg: #0369a1;
+  --applied-line: rgb(2 132 199 / 0.35);
+  --tab-active: rgb(2 132 199 / 0.12);
+  --tab-active-line: rgb(2 132 199 / 0.45);
+  --tab-count: #0284c7;
+  --page-active: #0284c7;
 }
 :root.dark {
-  --bg: #09090b;
-  --surface: #111114;
-  --subtle: #18181b;
-  --fg: #f4f4f5;
-  --muted: #a1a1aa;
-  --line: #27272a;
+  --bg: #090c12;
+  --surface: #0f121b;
+  --subtle: #151824;
+  --fg: #ffffff;
+  --muted: #9aa8bf;
+  --line: #1d2130;
   --accent: #ffffff;
-  --accent-fg: #09090b;
+  --accent-fg: #090c12;
   --accent-hover: #e4e4e7;
   --focus: #52525b;
-  --applied: #38bdf8;
+  --applied: #00b7f6;
   --followed: #f59e0b;
   --interview: #c084fc;
   --offer: #34d399;
   --rejected: #f87171;
   --closed: #71717a;
   --overdue: #fb7185;
+  --tile: #0f2d57;
+  --tile-fg: #dbf5ff;
+  --applied-soft: rgb(0 183 246 / 0.16);
+  --applied-fg: #38d4ff;
+  --applied-line: rgb(0 183 246 / 0.3);
+  --tab-active: rgb(37 99 235 / 0.25);
+  --tab-active-line: rgb(37 99 235 / 0.6);
+  --tab-count: #2563eb;
+  --page-active: #03397e;
   color-scheme: dark;
 }
 
@@ -61,15 +79,29 @@
   --color-status-offer: var(--offer);
   --color-status-rejected: var(--rejected);
   --color-status-closed: var(--closed);
+  --color-tile: var(--tile);
+  --color-tile-fg: var(--tile-fg);
+  --color-applied-soft: var(--applied-soft);
+  --color-applied-fg: var(--applied-fg);
+  --color-applied-line: var(--applied-line);
+  --color-tab-active: var(--tab-active);
+  --color-tab-active-line: var(--tab-active-line);
+  --color-tab-count: var(--tab-count);
+  --color-page-active: var(--page-active);
   --font-sans: var(--font-body);
   --font-mono: var(--font-mono);
+}
+
+/* Scale knob for the whole UI: rem-based Tailwind sizes follow this; px arbitrary values were scaled to match. */
+html {
+  font-size: 80%;
 }
 
 body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -113,9 +145,12 @@ body {
   }
 }
 
-:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+/* In a layer so Tailwind's focus:outline-none on inputs can override it; unlayered rules always win. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
 }
 
 /* Custom sleek minimalist scrollbars matching theme tokens */

@@ -1,9 +1,7 @@
 import type { RefObject } from "react";
-import { cn } from "@/lib/cn";
 import { SOURCES } from "@/lib/types";
 import type { ApplicationSort } from "@/lib/types";
 import { Button } from "./ui/Button";
-import { Input } from "./ui/Input";
 import { Search, Download } from "./ui/icons";
 import { Select, type SelectOption } from "./ui/Select";
 
@@ -30,35 +28,23 @@ type Props = {
 
 export function TableToolbar({ query, onQuery, source, onSource, sort, onSort, onExport, searchRef }: Props) {
   return (
-    <div className="mb-3 flex flex-wrap items-center gap-2.5">
-      <div className="relative min-w-0 flex-[1_1_260px]">
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted" />
-        <Input
+    <div className="flex flex-wrap items-center gap-4">
+      <div className="relative min-w-0 flex-[1_1_208px]">
+        <Search className="pointer-events-none absolute top-1/2 left-[22.4px] size-4 -translate-y-1/2 text-muted" />
+        <input
           ref={searchRef}
           type="search"
-          placeholder="Search company, role, contact or notes"
+          placeholder="Search company, role, contact or notes…"
           value={query}
           onChange={(e) => onQuery(e.target.value)}
-          className="pl-8.5"
           aria-label="Search applications"
+          className="h-[39.2px] w-full rounded-lg border border-line bg-subtle pr-4 pl-[41.6px] text-[12px] text-fg placeholder:text-muted transition-colors focus:border-tab-active-line focus:outline-none"
         />
       </div>
-      <Select
-        value={source}
-        options={SOURCE_OPTIONS}
-        onChange={onSource}
-        ariaLabel="Filter by source"
-        className={cn("border border-line bg-surface px-3 py-2 hover:bg-subtle")}
-      />
-      <Select
-        value={sort}
-        options={SORTS}
-        onChange={(v) => onSort(v as SortKey)}
-        ariaLabel="Sort applications"
-        className={cn("border border-line bg-surface px-3 py-2 hover:bg-subtle")}
-      />
-      <Button onClick={onExport} title="Download all applications as CSV">
-        <Download className="size-3.5" />
+      <Select value={source} options={SOURCE_OPTIONS} onChange={onSource} ariaLabel="Filter by source" large />
+      <Select value={sort} options={SORTS} onChange={(v) => onSort(v as SortKey)} ariaLabel="Sort applications" large />
+      <Button size="lg" variant="default" onClick={onExport} title="Download all applications as CSV" className="bg-surface">
+        <Download className="size-4" />
         Export CSV
       </Button>
     </div>

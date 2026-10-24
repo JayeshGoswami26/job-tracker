@@ -12,7 +12,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { TableToolbar, type SortKey } from "./TableToolbar";
 import { Button } from "./ui/Button";
 import { Modal } from "./ui/Modal";
-import { Plus } from "./ui/icons";
+import { ChevronDown, Plus } from "./ui/icons";
 import { useApplications } from "@/hooks/useApplications";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { useToast } from "@/hooks/useToast";
@@ -22,7 +22,7 @@ import { SOURCES, STATUSES, type App, type Draft, type Status } from "@/lib/type
 
 const CSV_HEADERS = [
   "Company", "Role", "Source", "Work mode", "Salary", "Location", "Date applied",
-  "Status", "Follow-up date", "Contact", "Link", "Notes", "Rejection reason", "Created", "Updated",
+  "Status", "Follow-up date", "Contact", "Mobile", "Link", "Notes", "Rejection reason", "Created", "Updated",
 ];
 
 type SheetData = {
@@ -140,7 +140,7 @@ export default function Tracker() {
   function exportCsv() {
     const rows = apps.map((a) => [
       a.company, a.role, a.source, a.workMode, a.salary, a.location, a.applied,
-      a.status, a.followUp, a.contact, a.link, a.notes, a.rejectReason,
+      a.status, a.followUp, a.contact, a.phone, a.link, a.notes, a.rejectReason,
       new Date(a.createdAt).toISOString(), new Date(a.updatedAt).toISOString(),
     ]);
     downloadCSV(`applications-${today()}.csv`, toCSV(CSV_HEADERS, rows));
@@ -193,15 +193,15 @@ export default function Tracker() {
   }
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6">
+    <div className="mx-auto flex w-full max-w-[1315.2px] flex-col gap-4 px-4 py-8 sm:px-[52px]">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-fg">Application Tracker</h1>
-          <p className="mt-0.5 text-xs text-muted">Companies you have applied to, and the follow-ups due.</p>
+          <h1 className="text-[22.4px] leading-tight font-semibold tracking-tight text-fg">Application Tracker</h1>
+          <p className="mt-1 text-base text-muted">Companies you have applied to, and the follow-ups due.</p>
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Button variant="primary" onClick={() => setSheet(openEdit(null))}>
+          <Button variant="primary" size="lg" onClick={() => setSheet(openEdit(null))}>
             <Plus className="size-3.5" />
             Add application
           </Button>
@@ -231,11 +231,7 @@ export default function Tracker() {
         />
       )}
 
-      <section aria-label="All applications">
-        <h2 className="mb-2.5 flex items-center gap-2 text-[11px] font-semibold tracking-wider text-muted uppercase select-none">
-          All applications <span className="font-mono text-xs tracking-normal text-fg">{pagination.total}</span>
-        </h2>
-
+      <section aria-label="All applications" className="flex flex-col gap-4">
         <TableToolbar
           query={query}
           onQuery={(value) => {
@@ -267,7 +263,6 @@ export default function Tracker() {
             resetPage();
             updateUrl({ status: value, page: 1 });
           }}
-          className="mb-3"
         />
 
         <ApplicationsTable
@@ -280,44 +275,62 @@ export default function Tracker() {
           onEmptyAction={summary.total === 0 ? () => setSheet(openEdit(null)) : clearFilters}
           onOpen={(a) => setSheet(openView(a))}
           onStatusChange={handleStatusChange}
+          footer={
+            loaded ? (
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-6 py-4 text-[12px] text-muted">
+                <span>
+                  {pagination.totalPages > 1
+                    ? `Showing ${(pagination.page - 1) * pagination.pageSize + 1}–${Math.min(pagination.page * pagination.pageSize, pagination.total)} of ${pagination.total} applications`
+                    : `Showing ${apps.length} of ${pagination.total} applications`}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label="Previous page"
+                    disabled={page <= 1}
+                    onClick={() => {
+                      const nextPage = page - 1;
+                      setPage(nextPage);
+                      updateUrl({ page: nextPage });
+                    }}
+                    className="flex size-9 items-center justify-center rounded-md text-muted transition-colors hover:bg-subtle hover:text-fg disabled:pointer-events-none disabled:opacity-40"
+                  >
+                    <ChevronDown className="size-4 rotate-90" />
+                  </button>
+                  <span className="flex size-9 items-center justify-center rounded-md bg-page-active font-medium text-white tabular-nums">
+                    {pagination.page}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Next page"
+                    disabled={page >= pagination.totalPages}
+                    onClick={() => {
+                      const nextPage = page + 1;
+                      setPage(nextPage);
+                      updateUrl({ page: nextPage });
+                    }}
+                    className="flex size-9 items-center justify-center rounded-md text-muted transition-colors hover:bg-subtle hover:text-fg disabled:pointer-events-none disabled:opacity-40"
+                  >
+                    <ChevronDown className="size-4 -rotate-90" />
+                  </button>
+                </div>
+              </div>
+            ) : null
+          }
         />
-        {loaded && pagination.totalPages > 1 && (
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
-            <span>
-              Showing {(pagination.page - 1) * pagination.pageSize + 1}–{Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total}
-            </span>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="default"
-                disabled={page <= 1}
-                onClick={() => {
-                  const nextPage = page - 1;
-                  setPage(nextPage);
-                  updateUrl({ page: nextPage });
-                }}
-              >
-                Previous
-              </Button>
-              <span className="font-mono tabular-nums">{pagination.page} / {pagination.totalPages}</span>
-              <Button
-                variant="default"
-                disabled={page >= pagination.totalPages}
-                onClick={() => {
-                  const nextPage = page + 1;
-                  setPage(nextPage);
-                  updateUrl({ page: nextPage });
-                }}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        )}
       </section>
 
       <Modal
         open={sheet !== null}
         onClose={() => setSheet(null)}
+        xwide
+        description={
+          !sheet?.editing
+            ? "Track a new job application"
+            : sheet.mode === "view"
+              ? "View complete information about this application"
+              : "Update the details of this job application"
+        }
         title={
           sheet?.editing
             ? sheet.mode === "view"
