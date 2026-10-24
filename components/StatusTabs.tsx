@@ -76,7 +76,7 @@ export function StatusTabs({ tabs, activeId, onChange, className }: Props) {
       role="tablist"
       aria-label="Filter applications by status"
       className={cn(
-        "relative flex items-center gap-1 overflow-x-auto rounded-lg border border-line/80 bg-surface/40 p-1 [scrollbar-width:thin]",
+        "relative flex w-full min-w-0 flex-wrap items-center gap-1 overflow-visible rounded-lg border border-line bg-surface/50 p-1.5 md:flex-nowrap md:overflow-x-auto [scrollbar-width:thin]",
         className,
       )}
     >
@@ -85,7 +85,7 @@ export function StatusTabs({ tabs, activeId, onChange, className }: Props) {
         <span
           aria-hidden="true"
           className={cn(
-            "pointer-events-none absolute rounded-md border border-line bg-subtle shadow-xs",
+            "pointer-events-none absolute hidden",
             "transition-[transform,width] duration-200 ease-[cubic-bezier(0.2,0,0,1)]",
           )}
           style={{
@@ -111,17 +111,17 @@ export function StatusTabs({ tabs, activeId, onChange, className }: Props) {
             tabIndex={isActive ? 0 : -1}
             onClick={() => onChange(tab.id)}
             className={cn(
-              "relative z-10 flex shrink-0 items-center rounded-md px-3 py-1.5 text-xs font-medium cursor-pointer select-none transition-colors",
+              "relative z-10 flex min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-md border border-transparent px-2.5 py-2 text-sm font-medium cursor-pointer select-none transition-colors md:flex-none md:px-3",
               isActive
-                ? "font-semibold text-fg"
-                : "text-muted hover:text-fg hover:bg-subtle/30",
+                ? "border-line bg-subtle font-semibold text-fg shadow-sm"
+                : "text-muted hover:bg-subtle/60 hover:text-fg",
             )}
           >
             <span>{tab.label}</span>
             {tab.count != null && (
               <span
                 className={cn(
-                  "ml-1.5 font-mono text-[11px] tabular-nums transition-colors",
+                  "ml-1.5 rounded-full font-mono text-[11px] font-medium tabular-nums transition-colors",
                   isActive ? "text-fg font-semibold" : "text-muted opacity-80",
                 )}
               >
