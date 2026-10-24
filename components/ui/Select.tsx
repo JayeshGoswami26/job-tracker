@@ -188,8 +188,15 @@ export function Select({ value, options, onChange, ariaLabel, placeholder = "Sel
     }
   }
 
+  const isFull = className?.includes("w-full");
+
   return (
-    <div ref={rootRef} className="relative inline-block max-w-full" onKeyDown={onKey} onClick={(e) => e.stopPropagation()}>
+    <div
+      ref={rootRef}
+      className={cn("relative max-w-full", isFull ? "block w-full" : "inline-block")}
+      onKeyDown={onKey}
+      onClick={(e) => e.stopPropagation()}
+    >
       <button
         ref={triggerRef}
         type="button"
@@ -199,7 +206,7 @@ export function Select({ value, options, onChange, ariaLabel, placeholder = "Sel
         aria-label={ariaLabel}
         onClick={() => (open ? close(false) : openMenu())}
         className={cn(
-          "inline-flex max-w-full items-center gap-1.5 rounded-md text-sm font-medium cursor-pointer transition-colors",
+          "inline-flex h-9 max-w-full items-center justify-between gap-1.5 rounded-md border border-line bg-surface px-3 text-xs font-medium cursor-pointer transition-colors hover:bg-subtle hover:border-zinc-700/60",
           className,
         )}
       >
@@ -223,7 +230,7 @@ export function Select({ value, options, onChange, ariaLabel, placeholder = "Sel
             aria-label={ariaLabel}
             style={style}
             className={cn(
-              "fixed z-[60] min-w-max overflow-y-auto rounded-lg border border-line bg-surface py-1 shadow-lg",
+              "fixed z-[60] min-w-max overflow-y-auto rounded-lg border border-line bg-surface p-1 shadow-md",
               popupClassName,
             )}
           >
@@ -236,14 +243,14 @@ export function Select({ value, options, onChange, ariaLabel, placeholder = "Sel
                 onMouseEnter={() => setActive(i)}
                 onClick={() => pick(i)}
                 className={cn(
-                  "flex cursor-pointer items-center justify-between gap-6 px-3 py-1.5 text-sm whitespace-nowrap",
-                  i === active && "bg-subtle",
-                  o.value === value ? "font-semibold" : "font-normal",
+                  "flex cursor-pointer items-center justify-between gap-6 rounded-md px-2.5 py-1.5 text-xs whitespace-nowrap transition-colors",
+                  i === active ? "bg-subtle text-fg" : "text-muted hover:text-fg",
+                  o.value === value && "font-semibold text-fg",
                 )}
               >
                 <span>{o.label}</span>
-                {o.hint && <span className="text-xs text-muted">{o.hint}</span>}
-                {o.value === value && <span className="text-accent">✓</span>}
+                {o.hint && <span className="text-[11px] text-muted">{o.hint}</span>}
+                {o.value === value && <span className="text-fg font-semibold">✓</span>}
               </li>
             ))}
           </ul>,

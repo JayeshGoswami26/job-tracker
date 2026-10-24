@@ -75,7 +75,7 @@ export function Modal({ open, onClose, title, children, className }: Props) {
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/35" onClick={onClose} aria-hidden />
+      <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs" onClick={onClose} aria-hidden />
       <div
         ref={panelRef}
         role="dialog"
@@ -83,13 +83,13 @@ export function Modal({ open, onClose, title, children, className }: Props) {
         aria-label={title}
         tabIndex={-1}
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100vh-48px)] w-[min(560px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-[0_20px_50px_rgba(0,0,0,0.25)] outline-none",
+          "fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100vh-48px)] w-[min(560px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-2xl outline-none",
           className,
         )}
       >
-        <div className="flex items-center justify-between border-b border-line px-5 py-4">
-          <h3 className="text-base font-semibold">{title}</h3>
-          <Button variant="quiet" onClick={onClose} aria-label="Close" className="px-2 py-1.5">
+        <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
+          <h3 className="text-sm font-semibold tracking-tight text-fg">{title}</h3>
+          <Button variant="quiet" onClick={onClose} aria-label="Close" className="px-2 py-1.5 text-muted hover:text-fg">
             <X className="size-4" />
           </Button>
         </div>

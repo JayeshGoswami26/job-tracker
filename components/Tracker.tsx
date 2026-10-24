@@ -123,11 +123,11 @@ export default function Tracker() {
   }
 
   return (
-    <div className="mx-auto flex max-w-[1120px] flex-col gap-7 px-4 pt-8 pb-18 max-md:pt-7">
-      <header className="flex flex-wrap items-end justify-between gap-y-5 border-b border-line pb-5">
+    <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
         <div>
-          <h1 className="m-0 text-[22px] font-bold tracking-tight">Application Tracker</h1>
-          <p className="mt-1 text-sm text-muted">Companies you have applied to, and the follow-ups due.</p>
+          <h1 className="text-xl font-semibold tracking-tight text-fg">Application Tracker</h1>
+          <p className="mt-0.5 text-xs text-muted">Companies you have applied to, and the follow-ups due.</p>
         </div>
         <Button variant="primary" onClick={() => setSheet({ editing: null })}>
           <Plus className="size-3.5" />
@@ -135,7 +135,7 @@ export default function Tracker() {
         </Button>
       </header>
 
-      {loadError && <div className="rounded-md border border-line bg-subtle px-3.5 py-2.5">{loadError}</div>}
+      {loadError && <div className="rounded-md border border-line bg-subtle px-3.5 py-2 text-xs text-rose-400">{loadError}</div>}
 
       <StatsBar apps={apps} dueCount={due.length} />
 
@@ -156,8 +156,8 @@ export default function Tracker() {
       )}
 
       <section aria-label="All applications">
-        <h2 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-[0.08em] text-muted uppercase">
-          All applications <span className="font-mono text-[12px] tracking-normal text-fg">{list.length}</span>
+        <h2 className="mb-2.5 flex items-center gap-2 text-[11px] font-semibold tracking-wider text-muted uppercase select-none">
+          All applications <span className="font-mono text-xs tracking-normal text-fg">{list.length}</span>
         </h2>
 
         <TableToolbar
@@ -171,7 +171,7 @@ export default function Tracker() {
           searchRef={searchRef}
         />
 
-        <div className="mb-3.5 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:thin]">
+        <div className="mb-3 flex items-center gap-1 overflow-x-auto pb-1 [scrollbar-width:thin]">
           {["Active", "All", ...STATUSES].map((o) => (
             <Chip
               key={o}

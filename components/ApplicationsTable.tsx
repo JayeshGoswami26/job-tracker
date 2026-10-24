@@ -15,8 +15,8 @@ type Props = {
 
 const STATUS_OPTIONS = STATUSES.map((s) => ({ value: s, label: s }));
 
-const th = "border-b border-line bg-subtle px-4 py-3 text-left text-[11.5px] font-semibold tracking-[0.07em] text-muted uppercase";
-const td = "px-4 py-3 align-middle text-sm";
+const th = "border-b border-line bg-subtle/50 px-4 py-2.5 text-left text-[11px] font-semibold tracking-[0.06em] text-muted uppercase select-none";
+const td = "px-4 py-3 align-middle text-xs";
 
 export function ApplicationsTable({ apps, onOpen, onStatusChange }: Props) {
   return (
@@ -37,7 +37,7 @@ export function ApplicationsTable({ apps, onOpen, onStatusChange }: Props) {
           <tbody>
             {apps.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-6 text-center text-muted">
+                <td colSpan={7} className="p-8 text-center text-xs text-muted">
                   No applications match this filter.
                 </td>
               </tr>
@@ -52,10 +52,10 @@ export function ApplicationsTable({ apps, onOpen, onStatusChange }: Props) {
                     tabIndex={0}
                     onClick={() => onOpen(a)}
                     onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && onOpen(a)}
-                    className="cursor-pointer border-b border-line last:border-b-0 hover:bg-subtle max-md:mb-0 max-md:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2"
+                    className="cursor-pointer border-b border-line/60 last:border-b-0 hover:bg-subtle/40 max-md:mb-0 max-md:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 transition-colors"
                   >
                     <td className={cn(td, "jt-co")}>
-                      <span className="flex flex-wrap items-center gap-x-1.5 font-semibold">
+                      <span className="flex flex-wrap items-center gap-x-1.5 font-semibold text-fg">
                         {a.company}
                         {due && <span className="inline-block size-1.5 rounded-full bg-overdue" title="Follow-up overdue or missing" />}
                         {linkOk && (
@@ -67,28 +67,28 @@ export function ApplicationsTable({ apps, onOpen, onStatusChange }: Props) {
                             onClick={(e) => e.stopPropagation()}
                             className="text-muted transition-colors hover:text-fg"
                           >
-                            <ExternalLink className="size-3.5" />
+                            <ExternalLink className="size-3" />
                           </a>
                         )}
                       </span>
-                      <small className="block text-[13px] break-words text-muted">
+                      <small className="block text-[11.5px] break-words text-muted mt-0.5">
                         {a.role}
                         {a.location ? ` · ${a.location}` : ""}
                         {a.workMode ? ` · ${a.workMode}` : ""}
                       </small>
                       {a.status === "Rejected" && a.rejectReason && (
-                        <small className="block text-[13px] text-muted">Reason: {a.rejectReason}</small>
+                        <small className="block text-[11.5px] text-muted mt-0.5">Reason: {a.rejectReason}</small>
                       )}
                     </td>
-                    <td className={cn(td, "jt-hide", "text-[13px] text-muted")}>{a.source || "—"}</td>
-                    <td className={cn(td, "jt-hide", "font-mono text-[13px] whitespace-nowrap tabular-nums")}>{fmt(a.applied)}</td>
+                    <td className={cn(td, "jt-hide", "text-muted")}>{a.source || "—"}</td>
+                    <td className={cn(td, "jt-hide", "font-mono tabular-nums text-muted")}>{fmt(a.applied)}</td>
                     <td className={cn(td, "jt-status")}>
                       <Select
                         value={a.status}
                         options={STATUS_OPTIONS}
                         onChange={(v) => onStatusChange(a, v as Status)}
                         ariaLabel={`Change status for ${a.company}`}
-                        className="rounded-full border border-transparent px-2 py-1 hover:border-line hover:bg-subtle"
+                        className="h-auto border-0 bg-transparent p-0 hover:bg-transparent hover:border-0 hover:opacity-85"
                         renderValue={() => <StatusPill status={a.status} />}
                       />
                     </td>

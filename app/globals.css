@@ -2,28 +2,64 @@
 
 /* Design tokens — flipped by prefers-color-scheme; [data-theme] kept for a future manual toggle. */
 :root {
-  --bg: #f7f7f5; --surface: #ffffff; --subtle: #f1f1ee; --fg: #1c1c1a; --muted: #6b6b66; --line: #e3e3de;
-  --accent: #1f4d3f; --accent-fg: #ffffff; --accent-hover: #173b30;
-  --focus: #1f4d3f;
-  --applied: #2f5d8a; --followed: #8a6216; --interview: #6b4a9b; --offer: #2f6b3a; --rejected: #9b3a3a; --closed: #6b6b66;
-  --overdue: #9b3a3a;
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --subtle: #f4f4f5;
+  --fg: #09090b;
+  --muted: #71717a;
+  --line: #e4e4e7;
+  --accent: #09090b;
+  --accent-fg: #ffffff;
+  --accent-hover: #27272a;
+  --focus: #71717a;
+  --applied: #0284c7;
+  --followed: #d97706;
+  --interview: #9333ea;
+  --offer: #059669;
+  --rejected: #e11d48;
+  --closed: #71717a;
+  --overdue: #e11d48;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #151513; --surface: #1d1d1a; --subtle: #252522; --fg: #ecebe6; --muted: #9c9c94; --line: #34342f;
-    --accent: #9fd1bd; --accent-fg: #10231d; --accent-hover: #b5ddcb;
-    --focus: #9fd1bd;
-    --applied: #9dbfe0; --followed: #e0b86a; --interview: #c2aee6; --offer: #9fd3a8; --rejected: #e5a3a3; --closed: #9c9c94;
-    --overdue: #e5a3a3;
+    --bg: #09090b;
+    --surface: #111114;
+    --subtle: #18181b;
+    --fg: #f4f4f5;
+    --muted: #a1a1aa;
+    --line: #27272a;
+    --accent: #ffffff;
+    --accent-fg: #09090b;
+    --accent-hover: #e4e4e7;
+    --focus: #52525b;
+    --applied: #38bdf8;
+    --followed: #f59e0b;
+    --interview: #c084fc;
+    --offer: #34d399;
+    --rejected: #f87171;
+    --closed: #71717a;
+    --overdue: #fb7185;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #151513; --surface: #1d1d1a; --subtle: #252522; --fg: #ecebe6; --muted: #9c9c94; --line: #34342f;
-  --accent: #9fd1bd; --accent-fg: #10231d; --accent-hover: #b5ddcb;
-  --focus: #9fd1bd;
-  --applied: #9dbfe0; --followed: #e0b86a; --interview: #c2aee6; --offer: #9fd3a8; --rejected: #e5a3a3; --closed: #9c9c94;
-  --overdue: #e5a3a3;
+  --bg: #09090b;
+  --surface: #111114;
+  --subtle: #18181b;
+  --fg: #f4f4f5;
+  --muted: #a1a1aa;
+  --line: #27272a;
+  --accent: #ffffff;
+  --accent-fg: #09090b;
+  --accent-hover: #e4e4e7;
+  --focus: #52525b;
+  --applied: #38bdf8;
+  --followed: #f59e0b;
+  --interview: #c084fc;
+  --offer: #34d399;
+  --rejected: #f87171;
+  --closed: #71717a;
+  --overdue: #fb7185;
   color-scheme: dark;
 }
 
@@ -57,6 +93,8 @@ body {
   font-family: var(--font-body);
   font-size: 14px;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 :focus-visible {

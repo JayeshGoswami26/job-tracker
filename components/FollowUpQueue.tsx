@@ -16,13 +16,14 @@ type Props = {
 export function FollowUpQueue({ items, onFollowUp, onClose, onCopy, onOpen }: Props) {
   return (
     <section aria-label="Follow-ups">
-      <h2 className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-[0.08em] text-muted uppercase">
-        Follow up <span className="font-mono text-[12px] tracking-normal text-fg">{items.length}</span>
+      <h2 className="mb-2.5 flex items-center gap-2 text-[11px] font-semibold tracking-wider text-muted uppercase select-none">
+        Follow up <span className="font-mono text-xs tracking-normal text-fg">{items.length}</span>
       </h2>
 
       {items.length === 0 ? (
-        <div className="rounded-lg border border-line bg-surface px-4 py-2.5 text-[13px] text-muted">
-          Nothing due — you are up to date.
+        <div className="flex items-center gap-2 rounded-lg border border-line bg-surface/40 px-3.5 py-2.5 text-xs text-muted">
+          <span className="inline-block size-1.5 rounded-full bg-status-offer" />
+          <span>Nothing due — you are up to date.</span>
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-line bg-surface">
@@ -33,23 +34,23 @@ export function FollowUpQueue({ items, onFollowUp, onClose, onCopy, onOpen }: Pr
               <div
                 key={a.id}
                 className={cn(
-                  "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2.5 border-t border-line px-4 py-3.5 first:border-t-0",
+                  "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-t border-line/60 px-4 py-3 first:border-t-0",
                   "md:grid-cols-[minmax(0,1fr)_auto_auto]",
-                  state === "over" && "shadow-[inset_3px_0_0_var(--overdue)]",
-                  state === "today" && "shadow-[inset_3px_0_0_var(--followed)]",
-                  state === "missing" && "shadow-[inset_3px_0_0_var(--overdue)]",
+                  state === "over" && "border-l-2 border-l-overdue",
+                  state === "today" && "border-l-2 border-l-status-followed",
+                  state === "missing" && "border-l-2 border-l-overdue",
                 )}
               >
                 <button type="button" onClick={() => onOpen(a)} className="min-w-0 cursor-pointer text-left">
-                  <strong className="block font-semibold break-words hover:underline">{a.company}</strong>
-                  <small className="text-[13px] text-muted break-words">
+                  <strong className="block text-xs font-semibold text-fg break-words hover:underline">{a.company}</strong>
+                  <small className="block text-[11.5px] text-muted break-words mt-0.5">
                     {a.role}
                     {a.source ? ` · ${a.source}` : ""} · applied {fmt(a.applied)}
                   </small>
                 </button>
                 <span
                   className={cn(
-                    "font-mono text-[12.5px] whitespace-nowrap",
+                    "font-mono text-xs whitespace-nowrap tabular-nums",
                     state === "today" ? "font-medium text-status-followed" : "font-medium text-overdue",
                   )}
                 >

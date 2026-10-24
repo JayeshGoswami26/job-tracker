@@ -13,21 +13,19 @@ export function StatsBar({ apps, dueCount }: Props) {
   ];
 
   return (
-    <section aria-label="Summary" className="grid grid-cols-2 overflow-hidden rounded-lg border border-line bg-surface md:grid-cols-4">
-      {stats.map((s, i) => (
+    <section aria-label="Summary" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {stats.map((s) => (
         <div
           key={s.label}
-          className={cn(
-            "px-4.5 py-4",
-            i === 1 && "border-l border-line",
-            i === 2 && "border-t border-line md:border-t-0 md:border-l",
-            i === 3 && "border-t border-line md:border-t-0 md:border-l",
-          )}
+          className="flex flex-col justify-between gap-2 rounded-lg border border-line bg-surface px-4 py-3.5 transition-colors hover:border-zinc-700/60"
         >
-          <b className={cn("block font-mono text-[26px] leading-tight font-semibold tabular-nums", s.alert && "text-overdue")}>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-muted">{s.label}</span>
+            {s.alert && <span className="inline-block size-1.5 rounded-full bg-overdue" />}
+          </div>
+          <b className={cn("font-mono text-2xl font-semibold tracking-tight tabular-nums", s.alert ? "text-overdue" : "text-fg")}>
             {s.value}
           </b>
-          <span className="text-[13px] text-muted">{s.label}</span>
         </div>
       ))}
     </section>
