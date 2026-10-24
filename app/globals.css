@@ -20,29 +20,7 @@
   --closed: #71717a;
   --overdue: #e11d48;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #09090b;
-    --surface: #111114;
-    --subtle: #18181b;
-    --fg: #f4f4f5;
-    --muted: #a1a1aa;
-    --line: #27272a;
-    --accent: #ffffff;
-    --accent-fg: #09090b;
-    --accent-hover: #e4e4e7;
-    --focus: #52525b;
-    --applied: #38bdf8;
-    --followed: #f59e0b;
-    --interview: #c084fc;
-    --offer: #34d399;
-    --rejected: #f87171;
-    --closed: #71717a;
-    --overdue: #fb7185;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
+:root.dark {
   --bg: #09090b;
   --surface: #111114;
   --subtle: #18181b;
@@ -95,6 +73,44 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body {
+  background-color: var(--bg);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 180ms;
+  animation-timing-function: ease-in-out;
+}
+
+::view-transition-old(root) {
+  animation-name: theme-fade-out;
+}
+
+::view-transition-new(root) {
+  animation-name: theme-fade-in;
+}
+
+@keyframes theme-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes theme-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 80ms;
+  }
 }
 
 :focus-visible {

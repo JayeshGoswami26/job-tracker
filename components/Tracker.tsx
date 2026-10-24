@@ -6,6 +6,7 @@ import { ApplicationsTable, TableEmptyState } from "./ApplicationsTable";
 import { FollowUpQueue } from "./FollowUpQueue";
 import { StatsBar } from "./StatsBar";
 import { StatusTabs, type TabItem } from "./StatusTabs";
+import { ThemeToggle } from "./ThemeToggle";
 import { TableToolbar, type SortKey } from "./TableToolbar";
 import { Button } from "./ui/Button";
 import { Modal } from "./ui/Modal";
@@ -157,10 +158,13 @@ export default function Tracker() {
           <h1 className="text-xl font-semibold tracking-tight text-fg">Application Tracker</h1>
           <p className="mt-0.5 text-xs text-muted">Companies you have applied to, and the follow-ups due.</p>
         </div>
-        <Button variant="primary" onClick={() => setSheet({ editing: null })}>
-          <Plus className="size-3.5" />
-          Add application
-        </Button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Button variant="primary" onClick={() => setSheet({ editing: null })}>
+            <Plus className="size-3.5" />
+            Add application
+          </Button>
+        </div>
       </header>
 
       {loadError && <div className="rounded-md border border-line bg-subtle px-3.5 py-2 text-xs text-rose-400">{loadError}</div>}
