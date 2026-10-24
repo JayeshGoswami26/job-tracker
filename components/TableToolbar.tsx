@@ -1,6 +1,7 @@
 import type { RefObject } from "react";
 import { cn } from "@/lib/cn";
 import { SOURCES } from "@/lib/types";
+import type { ApplicationSort } from "@/lib/types";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 import { Search, Download } from "./ui/icons";
@@ -12,7 +13,7 @@ export const SORTS: SelectOption[] = [
   { value: "followUp", label: "Follow-up date" },
   { value: "company", label: "Company A–Z" },
 ];
-export type SortKey = (typeof SORTS)[number]["value"];
+export type SortKey = ApplicationSort;
 
 const SOURCE_OPTIONS: SelectOption[] = [{ value: "", label: "All sources" }, ...SOURCES.map((s) => ({ value: s, label: s }))];
 

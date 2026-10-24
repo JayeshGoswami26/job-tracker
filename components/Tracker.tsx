@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ApplicationForm } from "./ApplicationForm";
 import { ApplicationsTable, TableEmptyState } from "./ApplicationsTable";
 import { FollowUpQueue } from "./FollowUpQueue";
@@ -15,8 +15,8 @@ import { useApplications } from "@/hooks/useApplications";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { useToast } from "@/hooks/useToast";
 import { downloadCSV, toCSV } from "@/lib/csv";
+import { cn } from "@/lib/cn";
 import { FOLLOW_DAYS, addDays, today } from "@/lib/date";
-import { ACTIVE, dueState, matchesFilter } from "@/lib/status";
 import { STATUSES, type App, type Draft, type Status } from "@/lib/types";
 
 const CSV_HEADERS = [
@@ -27,14 +27,30 @@ const CSV_HEADERS = [
 type SheetState = { editing: App | null; presetStatus?: Status; focusReason?: boolean } | null;
 
 export default function Tracker() {
-  const { apps, loaded, loadError, create, update, remove } = useApplications();
   const toast = useToast();
   const [statusFilter, setStatusFilter] = useState("Active");
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [sourceFilter, setSourceFilter] = useState("");
   const [sort, setSort] = useState<SortKey>("updated");
+  const [page, setPage] = useState(1);
   const [sheet, setSheet] = useState<SheetState>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const pageSize = 10;
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQuery(query), 250);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  const { apps, summary, pagination, loaded, loading, loadError, create, update, remove } = useApplications({
+    query: debouncedQuery,
+    status: statusFilter,
+    source: sourceFilter,
+    sort,
+    page,
+    pageSize,
+  });
 
   useHotkeys(
     {
@@ -44,30 +60,13 @@ export default function Tracker() {
     sheet === null,
   );
 
-  const due = useMemo(
-    () => apps.filter((a) => dueState(a) !== null).sort((a, b) => (a.followUp || "9999").localeCompare(b.followUp || "9999")),
-    [apps],
-  );
-
-  // Single-pass O(N) frequency aggregation for metrics and tabs (eliminates 10+ repeated filter sweeps)
   const statusCounts = useMemo(() => {
     const counts = new Map<string, number>();
-    counts.set("Active", 0);
-    counts.set("All", apps.length);
-    for (const s of STATUSES) counts.set(s, 0);
-
-    for (let i = 0; i < apps.length; i++) {
-      const a = apps[i];
-      if (ACTIVE.has(a.status)) {
-        counts.set("Active", (counts.get("Active") ?? 0) + 1);
-      }
-      const c = counts.get(a.status);
-      if (c !== undefined) {
-        counts.set(a.status, c + 1);
-      }
-    }
+    counts.set("Active", summary.activeTab);
+    counts.set("All", summary.total);
+    for (const status of STATUSES) counts.set(status, summary.byStatus[status]);
     return counts;
-  }, [apps]);
+  }, [summary]);
 
   const tabs: readonly TabItem[] = useMemo(() => {
     return ["Active", "All", ...STATUSES].map((key) => ({
@@ -77,24 +76,11 @@ export default function Tracker() {
     }));
   }, [statusCounts]);
 
-  const list = useMemo(() => {
-    const t = query.trim().toLowerCase();
-    const filtered = apps
-      .filter((a) => matchesFilter(a, statusFilter))
-      .filter((a) => !sourceFilter || a.source === sourceFilter)
-      .filter((a) => !t || [a.company, a.role, a.contact, a.notes, a.location].join(" ").toLowerCase().includes(t));
-    const byUpdated = (a: App, b: App) => b.updatedAt - a.updatedAt;
-    switch (sort) {
-      case "applied":
-        return [...filtered].sort((a, b) => b.applied.localeCompare(a.applied) || byUpdated(a, b));
-      case "followUp":
-        return [...filtered].sort((a, b) => (a.followUp || "9999").localeCompare(b.followUp || "9999") || byUpdated(a, b));
-      case "company":
-        return [...filtered].sort((a, b) => a.company.toLowerCase().localeCompare(b.company.toLowerCase()) || byUpdated(a, b));
-      default:
-        return [...filtered].sort(byUpdated);
-    }
-  }, [apps, statusFilter, sourceFilter, query, sort]);
+  const list = apps;
+
+  function resetPage() {
+    setPage(1);
+  }
 
   function exportCsv() {
     const rows = apps.map((a) => [
@@ -103,7 +89,7 @@ export default function Tracker() {
       new Date(a.createdAt).toISOString(), new Date(a.updatedAt).toISOString(),
     ]);
     downloadCSV(`applications-${today()}.csv`, toCSV(CSV_HEADERS, rows));
-    toast(`Exported ${apps.length} application${apps.length === 1 ? "" : "s"}`);
+    toast(`Exported ${apps.length} application${apps.length === 1 ? "" : "s"} on this page`);
   }
 
   async function handleSave(data: Draft): Promise<boolean> {
@@ -170,15 +156,15 @@ export default function Tracker() {
       {loadError && <div className="rounded-md border border-line bg-subtle px-3.5 py-2 text-xs text-rose-400">{loadError}</div>}
 
       <StatsBar
-        dueCount={due.length}
-        waitingCount={statusCounts.get("Active") ?? 0}
+        dueCount={summary.due.length}
+        waitingCount={summary.active}
         interviewCount={statusCounts.get("Interview") ?? 0}
-        totalCount={apps.length}
+        totalCount={summary.total}
       />
 
-      {apps.length > 0 && (
+      {summary.due.length > 0 && (
         <FollowUpQueue
-          items={due}
+          items={summary.due}
           onFollowUp={(a) =>
             void update(
               a.id,
@@ -199,11 +185,20 @@ export default function Tracker() {
 
         <TableToolbar
           query={query}
-          onQuery={setQuery}
+          onQuery={(value) => {
+            setQuery(value);
+            resetPage();
+          }}
           source={sourceFilter}
-          onSource={setSourceFilter}
+          onSource={(value) => {
+            setSourceFilter(value);
+            resetPage();
+          }}
           sort={sort}
-          onSort={setSort}
+          onSort={(value) => {
+            setSort(value);
+            resetPage();
+          }}
           onExport={exportCsv}
           searchRef={searchRef}
         />
@@ -211,12 +206,40 @@ export default function Tracker() {
         <StatusTabs
           tabs={tabs}
           activeId={statusFilter}
-          onChange={setStatusFilter}
+          onChange={(value) => {
+            setStatusFilter(value);
+            resetPage();
+          }}
           className="mb-3"
         />
 
-        <TableEmptyState loaded={loaded} total={apps.length} />
-        {(loaded && apps.length > 0) && <ApplicationsTable apps={list} onOpen={(a) => setSheet({ editing: a })} onStatusChange={handleStatusChange} />}
+        {!loaded && <TableEmptyState loaded={false} total={summary.total} />}
+        {loaded && summary.total > 0 && list.length === 0 && (
+          <div className="rounded-lg border border-line bg-surface/40 p-8 text-center text-xs text-muted">
+            No applications match the current filters.
+          </div>
+        )}
+        {list.length > 0 && (
+          <div className={cn("transition-opacity duration-150", loading && "opacity-60")} aria-busy={loading}>
+            <ApplicationsTable apps={list} onOpen={(a) => setSheet({ editing: a })} onStatusChange={handleStatusChange} />
+          </div>
+        )}
+        {loaded && pagination.totalPages > 1 && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+            <span>
+              Showing {(pagination.page - 1) * pagination.pageSize + 1}–{Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button variant="default" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>
+                Previous
+              </Button>
+              <span className="font-mono tabular-nums">{pagination.page} / {pagination.totalPages}</span>
+              <Button variant="default" disabled={page >= pagination.totalPages} onClick={() => setPage((current) => current + 1)}>
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </section>
 
       <Modal

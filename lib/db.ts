@@ -20,6 +20,7 @@ const dbName = process.env.MONGODB_DB || "job-tracker";
 
 let client: MongoClient | null = null;
 let clientPromise: Promise<MongoClient> | null = null;
+let indexesPromise: Promise<void> | null = null;
 
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
@@ -55,5 +56,18 @@ export async function getDb(): Promise<Db> {
 
 export async function getApplicationsCollection(): Promise<Collection<ApplicationDocument>> {
   const db = await getDb();
-  return db.collection<ApplicationDocument>("applications");
+  const collection = db.collection<ApplicationDocument>("applications");
+
+  if (!indexesPromise) {
+    indexesPromise = collection
+      .createIndexes([
+        { key: { applied: -1 }, name: "applications_applied_desc" },
+        { key: { updatedAt: -1 }, name: "applications_updated_desc" },
+        { key: { status: 1 }, name: "applications_status" },
+      ])
+      .then(() => undefined);
+  }
+
+  await indexesPromise;
+  return collection;
 }

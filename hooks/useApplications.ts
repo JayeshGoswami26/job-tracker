@@ -2,102 +2,132 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiRequest } from "@/lib/api";
-import type { App, Draft } from "@/lib/types";
+import type { App, ApplicationListResponse, ApplicationSort, ApplicationSummary, Draft } from "@/lib/types";
 import { useToast } from "./useToast";
 
-/**
- * Client state for the applications collection with optimistic writes.
- * All mutations go through commit() so appsRef always mirrors state —
- * snapshot/rollback stays correct even if two writes race.
- */
-export function useApplications() {
+type Params = {
+  query: string;
+  status: string;
+  source: string;
+  sort: ApplicationSort;
+  page: number;
+  pageSize: number;
+};
+
+const emptySummary: ApplicationSummary = {
+  total: 0,
+  active: 0,
+  activeTab: 0,
+  byStatus: {
+    Applied: 0,
+    "Followed up": 0,
+    Interview: 0,
+    Offer: 0,
+    Rejected: 0,
+    Closed: 0,
+  },
+  due: [],
+};
+
+export function useApplications(params: Params) {
   const [apps, setApps] = useState<App[]>([]);
+  const [summary, setSummary] = useState<ApplicationSummary>(emptySummary);
+  const [pagination, setPagination] = useState<ApplicationListResponse["pagination"]>({
+    page: params.page,
+    pageSize: params.pageSize,
+    total: 0,
+    totalPages: 1,
+  });
   const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const appsRef = useRef<App[]>([]);
+  const requestId = useRef(0);
   const toast = useToast();
 
-  const commit = useCallback((next: App[]) => {
-    appsRef.current = next;
-    setApps(next);
-  }, []);
+  const load = useCallback(async (): Promise<boolean> => {
+    const currentRequest = ++requestId.current;
+    const search = new URLSearchParams({
+      query: params.query,
+      status: params.status,
+      source: params.source,
+      sort: params.sort,
+      page: String(params.page),
+      pageSize: String(params.pageSize),
+    });
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/applications?${search.toString()}`, { cache: "no-store" });
+      if (!response.ok) {
+        const body = (await response.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error || "Could not load applications.");
+      }
+      const data = (await response.json()) as ApplicationListResponse;
+      if (currentRequest !== requestId.current) return false;
+      setApps(data.items);
+      setSummary(data.summary);
+      setPagination(data.pagination);
+      setLoadError("");
+      return true;
+    } catch (error) {
+      if (currentRequest === requestId.current) {
+        setLoadError((error as Error).message || "Could not load applications. Check the server and reload.");
+      }
+      return false;
+    } finally {
+      if (currentRequest === requestId.current) {
+        setLoaded(true);
+        setLoading(false);
+      }
+    }
+  }, [params.page, params.pageSize, params.query, params.sort, params.source, params.status]);
 
   useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const r = await fetch("/api/applications", { cache: "no-store" });
-        if (!r.ok) {
-          const j = (await r.json().catch(() => ({}))) as { error?: string };
-          throw new Error(j.error || "Could not load applications.");
-        }
-        const data = (await r.json()) as App[];
-        if (active) {
-          commit(data);
-          setLoadError("");
-        }
-      } catch (e) {
-        if (active) {
-          setLoadError((e as Error).message || "Could not load applications. Check the server and reload.");
-        }
-      } finally {
-        if (active) setLoaded(true);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [commit]);
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   const create = useCallback(
     async (draft: Draft): Promise<App | null> => {
       try {
         const created = (await apiRequest("POST", "/api/applications", draft)) as App;
-        commit([created, ...appsRef.current]);
+        await load();
         return created;
-      } catch (e) {
-        toast("Could not save: " + (e as Error).message);
+      } catch (error) {
+        toast("Could not save: " + (error as Error).message);
         return null;
       }
     },
-    [commit, toast],
+    [load, toast],
   );
 
   const update = useCallback(
     async (id: string, patch: Partial<Draft>, successMsg?: string): Promise<boolean> => {
-      const snapshot = appsRef.current;
-      commit(snapshot.map((a) => (a.id === id ? { ...a, ...patch, updatedAt: Date.now() } : a)));
       try {
-        const server = (await apiRequest("PATCH", `/api/applications/${id}`, patch)) as App;
-        commit(appsRef.current.map((a) => (a.id === id ? server : a)));
+        await apiRequest("PATCH", `/api/applications/${id}`, patch);
+        await load();
         if (successMsg) toast(successMsg);
         return true;
-      } catch (e) {
-        commit(snapshot);
-        toast("Could not save: " + (e as Error).message);
+      } catch (error) {
+        toast("Could not save: " + (error as Error).message);
         return false;
       }
     },
-    [commit, toast],
+    [load, toast],
   );
 
   const remove = useCallback(
     async (id: string): Promise<boolean> => {
-      const snapshot = appsRef.current;
-      const target = snapshot.find((a) => a.id === id);
-      commit(snapshot.filter((a) => a.id !== id));
       try {
         await apiRequest("DELETE", `/api/applications/${id}`);
-        if (target) toast("Deleted " + target.company);
+        await load();
         return true;
-      } catch (e) {
-        commit(snapshot);
-        toast("Could not delete: " + (e as Error).message);
+      } catch (error) {
+        toast("Could not delete: " + (error as Error).message);
         return false;
       }
     },
-    [commit, toast],
+    [load, toast],
   );
 
-  return { apps, loaded, loadError, create, update, remove };
+  return { apps, summary, pagination, loaded, loading, loadError, create, update, remove };
 }
