@@ -38,7 +38,7 @@ export function TableToolbar({ query, onQuery, source, onSource, sort, onSort, o
           value={query}
           onChange={(e) => onQuery(e.target.value)}
           aria-label="Search applications"
-          className="h-[39.2px] w-full rounded-lg border border-line bg-surface shadow-2xs pr-4 pl-[41.6px] text-[12px] text-fg placeholder:text-muted transition-colors focus:border-tab-active-line focus:outline-none"
+          className="h-[39.2px] w-full rounded-lg border border-line bg-subtle pr-4 pl-[41.6px] text-[12px] text-fg placeholder:text-muted transition-colors focus:border-tab-active-line focus:outline-none"
         />
       </div>
       <Select value={source} options={SOURCE_OPTIONS} onChange={onSource} ariaLabel="Filter by source" large />

@@ -16,32 +16,10 @@ export function StatsBar({ dueCount, waitingCount, interviewCount, totalCount }:
       icon: Calendar,
       caption: dueCount > 0 ? "Needs a follow-up" : "No pending follow-ups",
       alert: dueCount > 0,
-      tile: "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400",
     },
-    {
-      label: "Waiting for reply",
-      value: waitingCount,
-      icon: Chat,
-      caption: "Awaiting response",
-      alert: false,
-      tile: "bg-amber-50 text-amber-500 dark:bg-amber-950/60 dark:text-amber-400",
-    },
-    {
-      label: "Interviews",
-      value: interviewCount,
-      icon: Users,
-      caption: "Upcoming interviews",
-      alert: false,
-      tile: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400",
-    },
-    {
-      label: "Total applied",
-      value: totalCount,
-      icon: Document,
-      caption: "Applications sent",
-      alert: false,
-      tile: "bg-rose-50 text-rose-500 dark:bg-rose-950/60 dark:text-rose-400",
-    },
+    { label: "Waiting for reply", value: waitingCount, icon: Chat, caption: "Awaiting response", alert: false },
+    { label: "Interviews", value: interviewCount, icon: Users, caption: "Upcoming interviews", alert: false },
+    { label: "Total applied", value: totalCount, icon: Document, caption: "Applications sent", alert: false },
   ];
 
   return (
@@ -51,9 +29,9 @@ export function StatsBar({ dueCount, waitingCount, interviewCount, totalCount }:
         return (
           <div
             key={s.label}
-            className="flex items-center gap-6 rounded-xl border border-line bg-surface shadow-2xs px-[14.4px] py-[14.4px] transition-colors hover:border-tab-active-line"
+            className="flex items-center gap-6 rounded-xl border border-line bg-subtle px-[14.4px] py-[14.4px] transition-colors hover:border-tab-active-line"
           >
-            <span className={cn("flex size-[49.6px] shrink-0 items-center justify-center rounded-xl", s.tile)}>
+            <span className="flex size-[49.6px] shrink-0 items-center justify-center rounded-xl bg-tile text-tile-fg">
               <Icon className="size-7" />
             </span>
             <div className="min-w-0 flex-1">
