@@ -8,7 +8,8 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function PATCH(req: Request, { params }: Ctx) {
   const { id } = await params;
   try {
-    const app = updateApplication(id, await req.json());
+    const body = await req.json();
+    const app = await updateApplication(id, body);
     if (!app) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(app);
   } catch (e) {
@@ -18,7 +19,12 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
 export async function DELETE(_req: Request, { params }: Ctx) {
   const { id } = await params;
-  return deleteApplication(id)
-    ? new NextResponse(null, { status: 204 })
-    : NextResponse.json({ error: "Not found" }, { status: 404 });
+  try {
+    const ok = await deleteApplication(id);
+    return ok
+      ? new NextResponse(null, { status: 204 })
+      : NextResponse.json({ error: "Not found" }, { status: 404 });
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+  }
 }

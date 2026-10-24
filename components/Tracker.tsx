@@ -94,19 +94,46 @@ export default function Tracker() {
   const load = useCallback(async () => {
     try {
       const r = await fetch("/api/applications", { cache: "no-store" });
-      if (!r.ok) throw new Error("load failed");
+      if (!r.ok) {
+        const j = (await r.json().catch(() => ({}))) as { error?: string };
+        throw new Error(j.error || "Could not load applications.");
+      }
       setApps((await r.json()) as App[]);
       setLoadError("");
-    } catch {
-      setLoadError("Could not load applications. Check the server and reload.");
+    } catch (e) {
+      setLoadError((e as Error).message || "Could not load applications. Check the server and reload.");
     } finally {
       setLoaded(true);
     }
   }, []);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    let active = true;
+    async function init() {
+      try {
+        const r = await fetch("/api/applications", { cache: "no-store" });
+        if (!r.ok) {
+          const j = (await r.json().catch(() => ({}))) as { error?: string };
+          throw new Error(j.error || "Could not load applications.");
+        }
+        const data = (await r.json()) as App[];
+        if (active) {
+          setApps(data);
+          setLoadError("");
+        }
+      } catch (e) {
+        if (active) {
+          setLoadError((e as Error).message || "Could not load applications. Check the server and reload.");
+        }
+      } finally {
+        if (active) setLoaded(true);
+      }
+    }
+    init();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!sheet) return;

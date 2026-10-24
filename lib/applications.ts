@@ -1,15 +1,32 @@
 import { randomUUID } from "crypto";
-import { db } from "./db";
+import { getApplicationsCollection, type ApplicationDocument } from "./db";
 import { STATUSES, type App, type Draft, type Status } from "./types";
 
 const TEXT_FIELDS = [
-  "company", "role", "source", "location", "applied", "followUp",
-  "contact", "link", "notes", "rejectReason",
+  "company",
+  "role",
+  "source",
+  "location",
+  "applied",
+  "followUp",
+  "contact",
+  "link",
+  "notes",
+  "rejectReason",
 ] as const;
 
 const BLANK: Draft = {
-  company: "", role: "", source: "", location: "", applied: "", status: "Applied",
-  followUp: "", contact: "", link: "", notes: "", rejectReason: "",
+  company: "",
+  role: "",
+  source: "",
+  location: "",
+  applied: "",
+  status: "Applied",
+  followUp: "",
+  contact: "",
+  link: "",
+  notes: "",
+  rejectReason: "",
 };
 
 function parse(input: unknown): Partial<Draft> {
@@ -40,41 +57,65 @@ function finalize(fields: Partial<Draft>, base: Draft): Draft {
   return merged;
 }
 
-export function listApplications(): App[] {
-  return db.prepare("SELECT * FROM applications ORDER BY applied DESC").all() as App[];
+function toApp(doc: ApplicationDocument): App {
+  const { _id, ...rest } = doc;
+  return {
+    ...rest,
+    id: _id,
+  };
 }
 
-export function getApplication(id: string): App | undefined {
-  return db.prepare("SELECT * FROM applications WHERE id = ?").get(id) as App | undefined;
+export async function listApplications(): Promise<App[]> {
+  const collection = await getApplicationsCollection();
+  const docs = await collection.find({}).sort({ applied: -1 }).toArray();
+  return docs.map(toApp);
 }
 
-export function createApplication(input: unknown): App {
+export async function getApplication(id: string): Promise<App | null> {
+  const collection = await getApplicationsCollection();
+  const doc = await collection.findOne({ _id: id });
+  return doc ? toApp(doc) : null;
+}
+
+export async function createApplication(input: unknown): Promise<App> {
   const draft = finalize(parse(input), BLANK);
   const now = Date.now();
   const id = randomUUID();
-  db.prepare(`
-    INSERT INTO applications
-      (id, company, role, source, location, applied, status, followUp, contact, link, notes, rejectReason, createdAt, updatedAt)
-    VALUES
-      (@id, @company, @role, @source, @location, @applied, @status, @followUp, @contact, @link, @notes, @rejectReason, @createdAt, @updatedAt)
-  `).run({ ...draft, id, createdAt: now, updatedAt: now });
-  return getApplication(id) as App;
+  const collection = await getApplicationsCollection();
+
+  const doc: ApplicationDocument = {
+    ...draft,
+    _id: id,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  await collection.insertOne(doc);
+  return toApp(doc);
 }
 
-export function updateApplication(id: string, input: unknown): App | null {
-  const current = getApplication(id);
+export async function updateApplication(id: string, input: unknown): Promise<App | null> {
+  const current = await getApplication(id);
   if (!current) return null;
   const draft = finalize(parse(input), current);
-  db.prepare(`
-    UPDATE applications SET
-      company = @company, role = @role, source = @source, location = @location,
-      applied = @applied, status = @status, followUp = @followUp, contact = @contact,
-      link = @link, notes = @notes, rejectReason = @rejectReason, updatedAt = @updatedAt
-    WHERE id = @id
-  `).run({ ...draft, id, updatedAt: Date.now() });
-  return getApplication(id) as App;
+  const updatedAt = Date.now();
+
+  const collection = await getApplicationsCollection();
+  await collection.updateOne(
+    { _id: id },
+    {
+      $set: {
+        ...draft,
+        updatedAt,
+      },
+    }
+  );
+
+  return getApplication(id);
 }
 
-export function deleteApplication(id: string): boolean {
-  return db.prepare("DELETE FROM applications WHERE id = ?").run(id).changes > 0;
+export async function deleteApplication(id: string): Promise<boolean> {
+  const collection = await getApplicationsCollection();
+  const res = await collection.deleteOne({ _id: id });
+  return res.deletedCount > 0;
 }

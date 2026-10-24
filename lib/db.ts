@@ -1,33 +1,57 @@
-import Database from "better-sqlite3";
-import fs from "fs";
-import path from "path";
+import dns from "dns";
+import { Collection, Db, MongoClient } from "mongodb";
+import type { App } from "./types";
 
-function open(): Database.Database {
-  const dir = path.join(process.cwd(), "data");
-  fs.mkdirSync(dir, { recursive: true });
-  const db = new Database(path.join(dir, "tracker.db"));
-  db.pragma("journal_mode = WAL");
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS applications (
-      id TEXT PRIMARY KEY,
-      company TEXT NOT NULL,
-      role TEXT NOT NULL DEFAULT '',
-      source TEXT NOT NULL DEFAULT '',
-      location TEXT NOT NULL DEFAULT '',
-      applied TEXT NOT NULL,
-      status TEXT NOT NULL,
-      followUp TEXT NOT NULL DEFAULT '',
-      contact TEXT NOT NULL DEFAULT '',
-      link TEXT NOT NULL DEFAULT '',
-      notes TEXT NOT NULL DEFAULT '',
-      rejectReason TEXT NOT NULL DEFAULT '',
-      createdAt INTEGER NOT NULL,
-      updatedAt INTEGER NOT NULL
-    )
-  `);
-  return db;
+// Configure reliable DNS servers for SRV lookups (resolves querySrv ECONNREFUSED on Windows/ISPs)
+try {
+  dns.setServers(["8.8.8.8", "1.1.1.1"]);
+} catch {
+  // Ignore in restricted environments
 }
 
-// Cached on globalThis so hot reloads in development do not open new connections.
-const g = globalThis as unknown as { __trackerDb?: Database.Database };
-export const db: Database.Database = g.__trackerDb ?? (g.__trackerDb = open());
+export type ApplicationDocument = Omit<App, "id"> & {
+  _id: string;
+};
+
+const uri = process.env.MONGODB_URI;
+const dbName = process.env.MONGODB_DB || "job-tracker";
+
+let client: MongoClient | null = null;
+let clientPromise: Promise<MongoClient> | null = null;
+
+declare global {
+  var _mongoClientPromise: Promise<MongoClient> | undefined;
+}
+
+export async function getDb(): Promise<Db> {
+  const connectionUri = process.env.MONGODB_URI || uri;
+  if (!connectionUri) {
+    throw new Error(
+      "Missing MONGODB_URI environment variable. Please add your MongoDB Atlas connection string to .env.local"
+    );
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    // In development mode, use a global variable so that the value
+    // is preserved across module reloads caused by HMR (Hot Module Replacement).
+    if (!global._mongoClientPromise) {
+      client = new MongoClient(connectionUri);
+      global._mongoClientPromise = client.connect();
+    }
+    clientPromise = global._mongoClientPromise;
+  } else {
+    // In production mode, it's best to not use a global variable.
+    if (!clientPromise) {
+      client = new MongoClient(connectionUri);
+      clientPromise = client.connect();
+    }
+  }
+
+  const resolvedClient = await clientPromise;
+  return resolvedClient.db(dbName);
+}
+
+export async function getApplicationsCollection(): Promise<Collection<ApplicationDocument>> {
+  const db = await getDb();
+  return db.collection<ApplicationDocument>("applications");
+}
