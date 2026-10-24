@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ApplicationDetails } from "./ApplicationDetails";
 import { ApplicationForm } from "./ApplicationForm";
 import { ApplicationsTable } from "./ApplicationsTable";
 import { FollowUpQueue } from "./FollowUpQueue";
@@ -24,7 +25,22 @@ const CSV_HEADERS = [
   "Status", "Follow-up date", "Contact", "Link", "Notes", "Rejection reason", "Created", "Updated",
 ];
 
-type SheetState = { editing: App | null; presetStatus?: Status; focusReason?: boolean } | null;
+type SheetData = {
+  editing: App | null;
+  /** "view" shows read-only details (row click); "edit" shows the form. */
+  mode: "view" | "edit";
+  presetStatus?: Status;
+  focusReason?: boolean;
+};
+type SheetState = SheetData | null;
+
+function openView(a: App): SheetData {
+  return { editing: a, mode: "view" };
+}
+
+function openEdit(a: App | null, extra?: Partial<Omit<SheetData, "editing" | "mode">>): SheetData {
+  return { editing: a, mode: "edit", ...extra };
+}
 
 export default function Tracker() {
   const router = useRouter();
@@ -74,7 +90,7 @@ export default function Tracker() {
 
   useHotkeys(
     {
-      n: () => setSheet({ editing: null }),
+      n: () => setSheet(openEdit(null)),
       "/": () => searchRef.current?.focus(),
     },
     sheet === null,
@@ -157,7 +173,7 @@ export default function Tracker() {
     if (status === a.status) return;
     if (status === "Rejected") {
       // Needs a mandatory reason — route through the form instead of a blind patch.
-      setSheet({ editing: a, presetStatus: "Rejected", focusReason: true });
+      setSheet(openEdit(a, { presetStatus: "Rejected", focusReason: true }));
       return;
     }
     if (status === "Closed") {
@@ -185,7 +201,7 @@ export default function Tracker() {
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Button variant="primary" onClick={() => setSheet({ editing: null })}>
+          <Button variant="primary" onClick={() => setSheet(openEdit(null))}>
             <Plus className="size-3.5" />
             Add application
           </Button>
@@ -211,7 +227,7 @@ export default function Tracker() {
           }
           onClose={(a) => void update(a.id, { status: "Closed", followUp: "" }, "Closed with no response")}
           onCopy={copy}
-          onOpen={(a) => setSheet({ editing: a })}
+          onOpen={(a) => setSheet(openView(a))}
         />
       )}
 
@@ -261,8 +277,8 @@ export default function Tracker() {
           error={error}
           emptyKind={summary.total === 0 ? "database" : "filters"}
           onRetry={retry}
-          onEmptyAction={summary.total === 0 ? () => setSheet({ editing: null }) : clearFilters}
-          onOpen={(a) => setSheet({ editing: a })}
+          onEmptyAction={summary.total === 0 ? () => setSheet(openEdit(null)) : clearFilters}
+          onOpen={(a) => setSheet(openView(a))}
           onStatusChange={handleStatusChange}
         />
         {loaded && pagination.totalPages > 1 && (
@@ -302,19 +318,34 @@ export default function Tracker() {
       <Modal
         open={sheet !== null}
         onClose={() => setSheet(null)}
-        title={sheet?.editing ? "Edit application" : "Add application"}
+        title={
+          sheet?.editing
+            ? sheet.mode === "view"
+              ? "Application details"
+              : "Edit application"
+            : "Add application"
+        }
       >
-        {sheet && (
-          <ApplicationForm
-            key={sheet.editing?.id ?? "new"}
-            editing={sheet.editing}
-            presetStatus={sheet.presetStatus}
-            focusReason={sheet.focusReason}
-            existing={apps}
-            onSave={handleSave}
+        {sheet?.editing && sheet.mode === "view" ? (
+          <ApplicationDetails
+            key={sheet.editing.id}
+            app={sheet.editing}
+            onEdit={() => setSheet((s) => (s ? { ...s, mode: "edit" } : s))}
             onDelete={handleDelete}
-            onCancel={() => setSheet(null)}
           />
+        ) : (
+          sheet && (
+            <ApplicationForm
+              key={sheet.editing?.id ?? "new"}
+              editing={sheet.editing}
+              presetStatus={sheet.presetStatus}
+              focusReason={sheet.focusReason}
+              existing={apps}
+              onSave={handleSave}
+              onDelete={handleDelete}
+              onCancel={() => setSheet(null)}
+            />
+          )
         )}
       </Modal>
     </div>
