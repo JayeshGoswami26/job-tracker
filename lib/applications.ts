@@ -13,6 +13,8 @@ const TEXT_FIELDS = [
   "link",
   "notes",
   "rejectReason",
+  "salary",
+  "workMode",
 ] as const;
 
 const BLANK: Draft = {
@@ -27,6 +29,8 @@ const BLANK: Draft = {
   link: "",
   notes: "",
   rejectReason: "",
+  salary: "",
+  workMode: "",
 };
 
 function parse(input: unknown): Partial<Draft> {
@@ -58,9 +62,12 @@ function finalize(fields: Partial<Draft>, base: Draft): Draft {
 }
 
 function toApp(doc: ApplicationDocument): App {
-  const { _id, ...rest } = doc;
+  const { _id, salary, workMode, ...rest } = doc;
   return {
     ...rest,
+    // Documents created before these fields existed have no stored value.
+    salary: salary ?? "",
+    workMode: workMode ?? "",
     id: _id,
   };
 }

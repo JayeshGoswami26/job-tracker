@@ -9,8 +9,10 @@ try {
   // Ignore in restricted environments
 }
 
-export type ApplicationDocument = Omit<App, "id"> & {
+export type ApplicationDocument = Omit<App, "id" | "salary" | "workMode"> & {
   _id: string;
+  salary?: string;
+  workMode?: string;
 };
 
 const uri = process.env.MONGODB_URI;
