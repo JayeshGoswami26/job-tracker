@@ -1,15 +1,18 @@
 import { cn } from "@/lib/cn";
-import { ACTIVE } from "@/lib/status";
-import type { App } from "@/lib/types";
 
-type Props = { apps: App[]; dueCount: number };
+type Props = {
+  dueCount: number;
+  waitingCount: number;
+  interviewCount: number;
+  totalCount: number;
+};
 
-export function StatsBar({ apps, dueCount }: Props) {
+export function StatsBar({ dueCount, waitingCount, interviewCount, totalCount }: Props) {
   const stats = [
     { label: "Follow-ups due", value: dueCount, alert: dueCount > 0 },
-    { label: "Waiting for reply", value: apps.filter((a) => ACTIVE.has(a.status)).length },
-    { label: "Interviews", value: apps.filter((a) => a.status === "Interview").length },
-    { label: "Total applied", value: apps.length },
+    { label: "Waiting for reply", value: waitingCount },
+    { label: "Interviews", value: interviewCount },
+    { label: "Total applied", value: totalCount },
   ];
 
   return (

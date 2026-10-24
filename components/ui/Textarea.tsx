@@ -1,9 +1,12 @@
-import { forwardRef, type TextareaHTMLAttributes } from "react";
+import type { ComponentProps } from "react";
 import { cn } from "@/lib/cn";
 import { controlBaseClass } from "./Input";
 
-export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
-  function Textarea({ className, ...rest }, ref) {
-    return <textarea ref={ref} className={cn(controlBaseClass, "p-3 leading-relaxed resize-y min-h-[96px]", className)} {...rest} />;
-  },
-);
+export function Textarea({ className, ...rest }: ComponentProps<"textarea">) {
+  return (
+    <textarea
+      className={cn(controlBaseClass, "p-3 leading-relaxed resize-y min-h-[96px]", className)}
+      {...rest}
+    />
+  );
+}

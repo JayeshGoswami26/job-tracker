@@ -74,11 +74,26 @@ export function ApplicationForm({ editing, presetStatus, focusReason, existing, 
   const [delArmed, setDelArmed] = useState(false);
   const [error, setError] = useState("");
 
+  // O(1) hash map index for company duplicates built once on mount/data change
+  const companyIndex = useMemo(() => {
+    const map = new Map<string, App>();
+    for (let i = 0; i < existing.length; i++) {
+      const a = existing[i];
+      if (a.id !== editing?.id) {
+        const norm = normalizeCompany(a.company);
+        if (norm && !map.has(norm)) {
+          map.set(norm, a);
+        }
+      }
+    }
+    return map;
+  }, [existing, editing?.id]);
+
   const duplicate = useMemo(() => {
     const q = normalizeCompany(form.company);
     if (q.length < 2) return null;
-    return existing.find((a) => a.id !== editing?.id && normalizeCompany(a.company) === q) ?? null;
-  }, [form.company, existing, editing]);
+    return companyIndex.get(q) ?? null;
+  }, [form.company, companyIndex]);
 
   function setField<K extends keyof Draft>(key: K, value: Draft[K]) {
     setError("");
