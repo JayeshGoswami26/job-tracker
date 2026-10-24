@@ -104,10 +104,10 @@ export function StatusTabs({ tabs, activeId, onChange, className }: Props) {
               onClick={() => onChange(tab.id)}
               className={cn(
                 "relative z-10 flex shrink-0 items-center whitespace-nowrap rounded-lg border border-transparent px-[15.2px] py-3 text-[12px] font-medium cursor-pointer select-none",
-                isActive ? "font-semibold text-fg" : "text-muted hover:text-fg",
+                isActive ? "font-semibold text-tab-count dark:text-fg" : "text-slate-600 dark:text-muted hover:text-fg",
               )}
             >
-              {isActive && <span aria-hidden="true" className="mr-2 inline-block size-2 rounded-full bg-status-applied" />}
+              {isActive && <span aria-hidden="true" className="mr-2 inline-block size-2 rounded-full bg-tab-count dark:bg-status-applied" />}
               <span>{tab.label}</span>
               {tab.count != null && (
                 <span

@@ -3,11 +3,11 @@ import type { Status } from "@/lib/types";
 
 const badgeStyles: Record<Status, string> = {
   Applied: "bg-applied-soft text-applied-fg border-applied-line",
-  "Followed up": "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  Interview: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-  Offer: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  Rejected: "bg-rose-500/15 text-rose-400 border-rose-500/35",
-  Closed: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
+  "Followed up": "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
+  Interview: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20",
+  Offer: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
+  Rejected: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/25",
+  Closed: "bg-slate-500/10 text-slate-700 dark:text-zinc-400 border-slate-500/20",
 };
 
 const dotColors: Record<Status, string> = {

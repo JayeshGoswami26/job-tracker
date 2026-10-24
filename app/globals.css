@@ -2,32 +2,32 @@
 
 /* Design tokens — flipped by prefers-color-scheme; [data-theme] kept for a future manual toggle. */
 :root {
-  --bg: #fafafa;
+  --bg: #f0f4f9;
   --surface: #ffffff;
-  --subtle: #f4f4f5;
-  --fg: #09090b;
-  --muted: #71717a;
-  --line: #e4e4e7;
-  --accent: #09090b;
+  --subtle: #f8fafc;
+  --fg: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --accent: #4361ee;
   --accent-fg: #ffffff;
-  --accent-hover: #27272a;
-  --focus: #71717a;
-  --applied: #0284c7;
+  --accent-hover: #3651d4;
+  --focus: #4361ee;
+  --applied: #2563eb;
   --followed: #d97706;
-  --interview: #9333ea;
+  --interview: #7c3aed;
   --offer: #059669;
   --rejected: #e11d48;
-  --closed: #71717a;
+  --closed: #64748b;
   --overdue: #e11d48;
-  --tile: #e0f2fe;
-  --tile-fg: #0369a1;
-  --applied-soft: rgb(2 132 199 / 0.12);
-  --applied-fg: #0369a1;
-  --applied-line: rgb(2 132 199 / 0.35);
-  --tab-active: rgb(2 132 199 / 0.12);
-  --tab-active-line: rgb(2 132 199 / 0.45);
-  --tab-count: #0284c7;
-  --page-active: #0284c7;
+  --tile: #eff6ff;
+  --tile-fg: #2563eb;
+  --applied-soft: rgb(59 130 246 / 0.12);
+  --applied-fg: #2563eb;
+  --applied-line: rgb(59 130 246 / 0.35);
+  --tab-active: rgb(67 97 238 / 0.12);
+  --tab-active-line: rgb(67 97 238 / 0.35);
+  --tab-count: #4361ee;
+  --page-active: #4361ee;
 }
 :root.dark {
   --bg: #090c12;

@@ -27,12 +27,32 @@ const td = "px-6 py-[13.6px] align-middle text-[12px]";
 // NOTE: no <colgroup>/<col> here — styled col elements inside the streamed
 // Suspense boundary stall React's hydration reveal on this Next version.
 
+const AVATAR_PALETTES = [
+  "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border-blue-200/60 dark:border-blue-900/60",
+  "bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400 border-purple-200/60 dark:border-purple-900/60",
+  "bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200/60 dark:border-amber-900/60",
+  "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-900/60",
+  "bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 border-rose-200/60 dark:border-rose-900/60",
+  "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400 border-indigo-200/60 dark:border-indigo-900/60",
+  "bg-cyan-50 text-cyan-600 dark:bg-cyan-950/60 dark:text-cyan-400 border-cyan-200/60 dark:border-cyan-900/60",
+];
+
+function getAvatarPalette(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_PALETTES[Math.abs(hash) % AVATAR_PALETTES.length];
+}
+
 /** Initial-letter tile standing in for a company logo. */
 function CompanyAvatar({ name }: { name: string }) {
+  const palette = getAvatarPalette(name);
   return (
     <span
       aria-hidden="true"
-      className="flex size-11 shrink-0 items-center justify-center rounded-[8px] border border-line bg-subtle text-[13.6px] font-semibold text-fg"
+      className={cn(
+        "flex size-11 shrink-0 items-center justify-center rounded-[10px] border text-[13.6px] font-bold shadow-2xs",
+        palette,
+      )}
     >
       {name.trim().charAt(0).toUpperCase() || "?"}
     </span>
