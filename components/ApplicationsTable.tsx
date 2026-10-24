@@ -77,7 +77,10 @@ export function ApplicationsTable({
     if (scrollRef.current) scrollRef.current.scrollLeft = 0;
   }, [apps]);
 
-  const showInitialSkeleton = loading && apps.length === 0;
+  // Skeleton only for the very first load — later refetches (tab/filter switches)
+  // keep the current rows visible with the "Updating…" pill, so the skeleton
+  // never flashes for a microsecond between filters.
+  const showInitialSkeleton = loading && !loaded;
   const showDatabaseEmpty = loaded && !loading && !error && apps.length === 0 && emptyKind === "database";
   const showFilterEmpty = loaded && !loading && !error && apps.length === 0 && emptyKind === "filters";
 
@@ -89,8 +92,8 @@ export function ApplicationsTable({
           Updating applications…
         </div>
       )}
-      <div ref={scrollRef} className="h-[min(640px,calc(100vh-260px))] max-w-full overflow-auto">
-        <table className="jt-table h-full min-w-[1170px] w-full border-collapse">
+      <div ref={scrollRef} className="max-h-[min(640px,calc(100vh-260px))] max-w-full overflow-auto">
+        <table className="jt-table min-w-[1170px] w-full border-collapse">
           <thead className="sticky top-0 z-10">
             <tr>
               <th className={th}>Company</th>
@@ -149,7 +152,6 @@ export function ApplicationsTable({
                     <small className="mt-0.5 block line-clamp-2 break-words text-[11.5px] text-muted">
                       {a.role}{a.location ? ` · ${a.location}` : ""}{a.workMode ? ` · ${a.workMode}` : ""}
                     </small>
-                    {a.status === "Rejected" && a.rejectReason && <small className="mt-0.5 block line-clamp-2 text-[11.5px] text-muted">Reason: {a.rejectReason}</small>}
                   </td>
                   <td className={cn(td, "text-muted")}>{a.source || "—"}</td>
                   <td className={cn(td, "font-mono tabular-nums text-muted")}>{fmt(a.applied)}</td>
