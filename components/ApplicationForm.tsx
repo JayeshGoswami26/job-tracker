@@ -5,6 +5,7 @@ import { FOLLOW_DAYS, addDays, fmt, today } from "@/lib/date";
 import { normalizeCompany } from "@/lib/status";
 import { SOURCES, STATUSES, WORK_MODES, type App, type Draft, type Status } from "@/lib/types";
 import { Button } from "./ui/Button";
+import { DatePicker } from "./ui/DatePicker";
 import { Field } from "./ui/Field";
 import { FieldShell } from "./ui/FieldShell";
 import { Input } from "./ui/Input";
@@ -254,23 +255,21 @@ export function ApplicationForm({ editing, presetStatus, focusReason, existing, 
             />
           </Field>
           <Field label="Date applied">
-            <Input
+            <DatePicker
               icon={<Calendar className="size-4" />}
-              type="date"
-              required
               value={form.applied}
-              onChange={(e) => {
-                const v = e.target.value;
-                setForm((f) => ({ ...f, applied: v, followUp: editing ? f.followUp : addDays(v, FOLLOW_DAYS) }));
+              ariaLabel="Date applied"
+              onChange={(value) => {
+                setForm((f) => ({ ...f, applied: value, followUp: editing ? f.followUp : addDays(value, FOLLOW_DAYS) }));
               }}
             />
           </Field>
           <Field label="Follow-up date" hint={editing ? undefined : "Auto-set a week after applying"}>
-            <Input
+            <DatePicker
               icon={<Calendar className="size-4" />}
-              type="date"
               value={form.followUp}
-              onChange={(e) => setField("followUp", e.target.value)}
+              ariaLabel="Follow-up date"
+              onChange={(value) => setField("followUp", value)}
             />
           </Field>
           {form.status === "Rejected" && (

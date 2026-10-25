@@ -250,7 +250,7 @@ export function Select({ value, options, onChange, ariaLabel, placeholder = "Sel
             aria-label={ariaLabel}
             style={style}
             className={cn(
-              "fixed z-[60] min-w-max overflow-y-auto rounded-lg border border-line bg-surface p-1 shadow-md",
+              "fixed z-60 min-w-max overflow-y-auto rounded-lg border border-line bg-surface p-1 shadow-md",
               popupClassName,
             )}
           >
@@ -263,14 +263,14 @@ export function Select({ value, options, onChange, ariaLabel, placeholder = "Sel
                 onMouseEnter={() => setActive(i)}
                 onClick={() => pick(i)}
                 className={cn(
-                  "flex cursor-pointer items-center justify-between gap-6 rounded-md px-2.5 py-1.5 text-xs whitespace-nowrap transition-colors",
+                  "flex cursor-pointer items-center justify-between gap-6 rounded-md px-2.5 py-1.5 text-base whitespace-nowrap transition-colors",
                   i === active ? "bg-subtle text-fg" : "text-muted hover:text-fg",
                   o.value === value && "font-semibold text-fg",
                 )}
               >
                 <span>{o.label}</span>
-                {o.hint && <span className="text-[8.8px] text-muted">{o.hint}</span>}
-                {o.value === value && <span className="text-fg font-semibold">✓</span>}
+                {o.hint && <span className="text-base text-muted">{o.hint}</span>}
+                {o.value === value && <span className="text-base font-semibold">✓</span>}
               </li>
             ))}
           </ul>,

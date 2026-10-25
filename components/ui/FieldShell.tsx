@@ -15,7 +15,7 @@ export function FieldShell({ icon, className, children }: Props) {
   return (
     <div
       className={cn(
-        "flex min-h-12 min-w-0 items-stretch rounded-lg border border-line bg-surface transition-colors focus-within:border-tab-active-line",
+        "flex min-h-12 min-w-0 items-center justify-center  rounded-lg border border-line bg-surface transition-colors focus-within:border-tab-active-line",
         className,
       )}
     >
