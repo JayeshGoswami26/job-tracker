@@ -1,3 +1,4 @@
+import { requireOwner, PRIVATE_HEADERS } from "@/lib/api-auth";
 import { NextResponse } from "next/server";
 import { importApplications } from "@/lib/applications";
 
@@ -13,15 +14,23 @@ function extractItems(body: unknown): unknown[] {
 }
 
 export async function POST(req: Request) {
+  const denied = await requireOwner(req);
+  if (denied) return denied;
   try {
     const body = await req.json();
     const items = extractItems(body);
     const result = await importApplications(items);
-    return NextResponse.json(result, { status: 201 });
+    return privateJson(result, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
+    return privateJson(
       { error: error instanceof Error ? error.message : "Could not import applications" },
       { status: 400 },
     );
   }
 }
+
+const privateJson: typeof NextResponse.json = (body, init) => {
+  const response = NextResponse.json(body, init);
+  response.headers.set("Cache-Control", PRIVATE_HEADERS["Cache-Control"]);
+  return response;
+};

@@ -202,6 +202,15 @@ export default function Tracker() {
           <p className="mt-1 text-base text-muted">Companies you have applied to, and the follow-ups due.</p>
         </div>
         <div className="flex items-center gap-2">
+          <a
+            href="/auth/logout"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-line bg-surface px-4 text-[12px] font-medium whitespace-nowrap text-muted no-underline transition-colors hover:border-zinc-700/60 hover:bg-subtle hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          >
+            <svg className="size-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M8 4H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h4M12 6l4 4-4 4M7 10h9" />
+            </svg>
+            Sign out
+          </a>
           <ThemeToggle />
           <Button size="lg" onClick={() => setJsonImportOpen(true)}>
             <Document className="size-3.5" />
