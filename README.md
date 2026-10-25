@@ -73,3 +73,40 @@ Website login uses Auth0 with the Google connection. All existing records belong
 Run npm run test:auth, npm run lint, npx tsc --noEmit, and npm run build. If the local Turbopack CSS worker fails, npx next build --webpack provides an alternate production-build check.
 
 Phase 2 will implement the MCP endpoint, bearer-token validation, OAuth discovery, and client authorization. Current Auth0 API registration alone does not expose MCP tools.
+
+## Phase 2: read-only remote MCP
+
+The endpoint is https://job-trackersss.vercel.app/api/mcp. It implements stateless Streamable HTTP with JSON responses, using the official MCP SDK. GET/DELETE return 405 after authentication because there are no persistent streams or sessions. POST supports initialization, tools/list and tools/call.
+
+### Tools
+
+- search_applications: optional query (up to 200 characters), status (All by default), source, page (default 1), and pageSize (default 10, maximum 50). Returns items and pagination; searches all statuses unless explicitly filtered. Uses the existing business layer without dashboard summary queries.
+- get_application: requires an application UUID obtained from search; returns the full application or a tool error.
+- Both tools are read-only. No preview, create, import, update, delete, or job submission tools exist in Phase 2. Application content must be treated as untrusted data by clients.
+
+### Authentication and discovery
+
+MCP uses an Auth0 RS256 bearer access token, independently of website session cookies. Tokens must have the configured Auth0 issuer, an audience exactly equal to APP_BASE_URL + /api/mcp, a valid expiry and issued-at claim, the configured owner subject, and read:applications in the scope claim. Service-account tokens and other users are rejected. JWKS keys are cached by jose; credentials and tokens are never logged. No new application secrets or environment variables are needed.
+
+Public metadata is available at /.well-known/oauth-protected-resource and /.well-known/oauth-protected-resource/api/mcp. Unauthorized MCP requests return a WWW-Authenticate challenge linking to metadata. OAuth authorization and token exchange happen at Auth0; the tracker does not issue tokens or proxy client secrets. Browser Origin headers must match APP_BASE_URL; server clients may omit Origin. Cookies alone never authorize MCP, and no permissive CORS policy is enabled. Requests are limited to 64 KiB by the transport.
+
+### Auth0 setup — owner performs these steps
+
+1. Keep the existing API identifier https://job-trackersss.vercel.app/api/mcp, RS256, read:applications permission, consent enabled, and offline access enabled. Phase 2 clients only need read:applications, not write:applications.
+2. In tenant Settings → Advanced, enable Resource Parameter Compatibility Profile so the MCP resource parameter selects this API. Enable Dynamic Client Registration if using a client's automatic OAuth registration flow. This creates client registrations, not access to tracker data; per-app permissions and owner checks still apply.
+3. Keep third-party default permissions unauthorized and anonymous/client-credentials access disabled for the intended MCP clients. Register/connect ChatGPT and Claude separately. If they register dynamically, locate their new applications in Auth0 after the initial attempt.
+4. For each intended client, authorize only read:applications under API → Application Access → User-delegated Access, and ensure its application can use the google-oauth2 connection. Third-party apps may require promoting the Google connection to domain level in its advanced settings; do this only for the intended integration and retain the owner check.
+5. If a client requires manual OAuth registration, create a separate appropriate Auth0 client for it, using the exact callback URI and client authentication method supplied by that client's current connection UI. Do not reuse Job Tracker Web's client secret or guess callback URLs. Configure Authorization Code with PKCE and Refresh Token grants as supported by that client.
+6. Keep consent required. Enable refresh-token rotation/expiry for the registered clients where supported. When connecting, request read:applications and (if refresh is desired) offline_access. Do not enable machine-to-machine or anonymous access to work around login failures.
+
+### Connect and verify
+
+Deploy with the existing production Auth0 variables first. In ChatGPT's custom app/MCP connection settings and Claude's custom connector settings, enter https://job-trackersss.vercel.app/api/mcp and use OAuth authentication. Exact menus and availability depend on the client/account. Sign in with the owner Google account and approve read access. If the first attempt registers a client but reports unauthorized access, complete its Auth0 per-app authorization above and reconnect.
+
+Ask: “Search my tracker for applications at Acme, including closed and rejected applications.” Then ask for a returned application's details. Confirm that the tool list contains only search_applications and get_application. Full application data (including notes/contact information) is returned to the connected AI client when you use these tools.
+
+Check unauthenticated POST /api/mcp returns 401 with the discovery challenge, metadata returns 200 without a login redirect, and website login still works. Tokens for another API, expired/tampered tokens, non-owner users, and missing read scope must fail. Existing website cookies alone must fail.
+
+For local MCP testing, register a separate Auth0 API identifier http://localhost:3000/api/mcp, since the audience is derived from APP_BASE_URL. Hosted chat clients cannot reach localhost directly; use the production endpoint for their connection tests.
+
+Run npm run test:mcp alongside npm run test:auth, lint, TypeScript and the production build. Tests use generated local signing keys and mock application functions; they do not read or modify Atlas. Live Auth0/client connection validation remains a deployment step for the owner.
