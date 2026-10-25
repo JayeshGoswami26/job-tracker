@@ -50,6 +50,14 @@ export function Download(p: P) {
   );
 }
 
+export function Upload(p: P) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" width="1em" height="1em" aria-hidden {...p}>
+      <path d="M8 10V3M5 6l3-3 3 3M3 12.5h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function Plus(p: P) {
   return (
     <svg viewBox="0 0 16 16" fill="none" width="1em" height="1em" aria-hidden {...p}>

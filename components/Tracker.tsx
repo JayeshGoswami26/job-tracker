@@ -6,13 +6,14 @@ import { ApplicationDetails } from "./ApplicationDetails";
 import { ApplicationForm } from "./ApplicationForm";
 import { ApplicationsTable } from "./ApplicationsTable";
 import { FollowUpQueue } from "./FollowUpQueue";
+import { JsonImportModal } from "./JsonImportModal";
 import { StatsBar } from "./StatsBar";
 import { StatusTabs, type TabItem } from "./StatusTabs";
 import { ThemeToggle } from "./ThemeToggle";
 import { TableToolbar, type SortKey } from "./TableToolbar";
 import { Button } from "./ui/Button";
 import { Modal } from "./ui/Modal";
-import { ChevronDown, Plus } from "./ui/icons";
+import { ChevronDown, Document, Plus } from "./ui/icons";
 import { useApplications } from "@/hooks/useApplications";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { useToast } from "@/hooks/useToast";
@@ -57,6 +58,7 @@ export default function Tracker() {
   const [sort, setSort] = useState<SortKey>("updated");
   const [page, setPage] = useState(1);
   const [sheet, setSheet] = useState<SheetState>(null);
+  const [jsonImportOpen, setJsonImportOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const pageSize = 10;
 
@@ -201,6 +203,10 @@ export default function Tracker() {
         </div>
         <div className="flex items-center gap-2">
           <ThemeToggle />
+          <Button size="lg" onClick={() => setJsonImportOpen(true)}>
+            <Document className="size-3.5" />
+            Quick add JSON
+          </Button>
           <Button variant="primary" size="lg" onClick={() => setSheet(openEdit(null))}>
             <Plus className="size-3.5" />
             Add application
@@ -361,6 +367,22 @@ export default function Tracker() {
           )
         )}
       </Modal>
+
+      <JsonImportModal
+        open={jsonImportOpen}
+        onClose={() => setJsonImportOpen(false)}
+        onImported={(result) => {
+          setJsonImportOpen(false);
+          void retry();
+          if (result.errors.length > 0) {
+            toast(`Imported ${result.createdCount}; ${result.errors.length} row${result.errors.length === 1 ? "" : "s"} had issues`);
+          } else if (result.skippedCount > 0) {
+            toast(`Imported ${result.createdCount}; skipped ${result.skippedCount} duplicate${result.skippedCount === 1 ? "" : "s"}`);
+          } else {
+            toast(`Imported ${result.createdCount} application${result.createdCount === 1 ? "" : "s"}`);
+          }
+        }}
+      />
     </div>
   );
 }

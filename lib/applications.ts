@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import type { Sort } from "mongodb";
 import { getApplicationsCollection, type ApplicationDocument } from "./db";
-import { dueState } from "./status";
+import { dueState, normalizeCompany } from "./status";
 import { SOURCES, STATUSES, WORK_MODES, type App, type ApplicationSort, type Draft, type Status } from "./types";
 
 const TEXT_FIELDS = [
@@ -124,6 +124,17 @@ type ListResult = {
   total: number;
 };
 
+export type ImportError = { index: number; message: string };
+export type ImportSkip = { index: number; reason: string };
+
+export type ImportResult = {
+  items: App[];
+  createdCount: number;
+  skippedCount: number;
+  skipped: ImportSkip[];
+  errors: ImportError[];
+};
+
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -201,6 +212,64 @@ export async function createApplication(input: unknown): Promise<App> {
 
   await collection.insertOne(doc);
   return toApp(doc);
+}
+
+export async function importApplications(inputs: unknown[]): Promise<ImportResult> {
+  if (inputs.length === 0) throw new Error("Add at least one application to import");
+  if (inputs.length > 500) throw new Error("You can import up to 500 applications at a time");
+
+  const collection = await getApplicationsCollection();
+  const errors: ImportError[] = [];
+  const skipped: ImportSkip[] = [];
+  const candidates: { index: number; draft: Draft }[] = [];
+  const seen = new Set<string>();
+
+  for (const [index, input] of inputs.entries()) {
+    try {
+      const draft = finalize(parse(input), BLANK);
+      const key = `${normalizeCompany(draft.company)}|${normalizeCompany(draft.role)}|${draft.applied}`;
+      if (seen.has(key)) {
+        skipped.push({ index, reason: "Duplicate in import data" });
+        continue;
+      }
+      seen.add(key);
+      candidates.push({ index, draft });
+    } catch (error) {
+      errors.push({ index, message: error instanceof Error ? error.message : "Invalid application" });
+    }
+  }
+
+  const duplicateFilters = candidates.map(({ draft }) => ({
+    company: { $regex: `^${escapeRegex(draft.company)}$`, $options: "i" },
+    role: { $regex: `^${escapeRegex(draft.role)}$`, $options: "i" },
+    applied: draft.applied,
+  }));
+  const existing = duplicateFilters.length
+    ? await collection.find({ $or: duplicateFilters }).project({ company: 1, role: 1, applied: 1 }).toArray()
+    : [];
+  const existingKeys = new Set(existing.map((item) => `${normalizeCompany(item.company)}|${normalizeCompany(item.role)}|${item.applied}`));
+  const documents: ApplicationDocument[] = [];
+  const now = Date.now();
+
+  for (const candidate of candidates) {
+    const key = `${normalizeCompany(candidate.draft.company)}|${normalizeCompany(candidate.draft.role)}|${candidate.draft.applied}`;
+    if (existingKeys.has(key)) {
+      skipped.push({ index: candidate.index, reason: "Already exists" });
+      continue;
+    }
+    const document: ApplicationDocument = { ...candidate.draft, _id: randomUUID(), createdAt: now, updatedAt: now };
+    documents.push(document);
+    existingKeys.add(key);
+  }
+
+  if (documents.length > 0) await collection.insertMany(documents, { ordered: true });
+  return {
+    items: documents.map(toApp),
+    createdCount: documents.length,
+    skippedCount: skipped.length,
+    skipped,
+    errors,
+  };
 }
 
 export async function updateApplication(id: string, input: unknown): Promise<App | null> {
