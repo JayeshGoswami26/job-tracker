@@ -25,6 +25,7 @@ let indexesPromise: Promise<void> | null = null;
 
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
+  var _applicationIndexes: Map<string, Promise<void>> | undefined;
 }
 
 export async function getDb(): Promise<Db> {
@@ -59,14 +60,29 @@ export async function getApplicationsCollection(): Promise<Collection<Applicatio
   const db = await getDb();
   const collection = db.collection<ApplicationDocument>("applications");
 
+  const indexKey = `${dbName}:performance-v1`;
+  if (process.env.NODE_ENV === "development") {
+    indexesPromise = global._applicationIndexes?.get(indexKey) ?? null;
+  }
   if (!indexesPromise) {
     indexesPromise = collection
       .createIndexes([
         { key: { applied: -1 }, name: "applications_applied_desc" },
         { key: { updatedAt: -1 }, name: "applications_updated_desc" },
         { key: { status: 1 }, name: "applications_status" },
+        { key: { status: 1, updatedAt: -1 }, name: "applications_status_updated" },
+        { key: { status: 1, followUp: 1 }, name: "applications_status_follow_up" },
       ])
-      .then(() => undefined);
+      .then(() => undefined)
+      .catch((error: unknown) => {
+        indexesPromise = null;
+        global._applicationIndexes?.delete(indexKey);
+        throw error;
+      });
+    if (process.env.NODE_ENV === "development") {
+      global._applicationIndexes ??= new Map();
+      global._applicationIndexes.set(indexKey, indexesPromise);
+    }
   }
 
   await indexesPromise;

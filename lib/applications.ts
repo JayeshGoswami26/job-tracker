@@ -1,7 +1,8 @@
 import { randomUUID } from "crypto";
 import type { Sort } from "mongodb";
 import { getApplicationsCollection, type ApplicationDocument } from "./db";
-import { dueState, normalizeCompany } from "./status";
+import { normalizeCompany } from "./status";
+import { addDays, FOLLOW_DAYS, today } from "./date";
 import { SOURCES, STATUSES, WORK_MODES, type App, type ApplicationSort, type Draft, type Status } from "./types";
 
 const TEXT_FIELDS = [
@@ -174,20 +175,27 @@ export async function listApplicationsPage(options: ListOptions): Promise<ListRe
 
 export async function getApplicationSummary() {
   const collection = await getApplicationsCollection();
-  const [total, grouped, activeDocs] = await Promise.all([
-    collection.countDocuments(),
+  const currentDate = today();
+  const [grouped, dueDocs] = await Promise.all([
     collection.aggregate<{ _id: Status; count: number }>([
       { $group: { _id: "$status", count: { $sum: 1 } } },
     ]).toArray(),
-    collection.find({ status: { $in: ["Applied", "Followed up"] } }).toArray(),
+    collection.find({
+      status: { $in: ["Applied", "Followed up"] },
+      $or: [
+        { followUp: { $gt: "", $lte: currentDate } },
+        { $or: [{ followUp: "" }, { followUp: { $exists: false } }], applied: { $lte: addDays(currentDate, -FOLLOW_DAYS) } },
+      ],
+    }).toArray(),
   ]);
   const byStatus = Object.fromEntries(STATUSES.map((status) => [status, 0])) as Record<Status, number>;
   for (const row of grouped) {
     if (row._id in byStatus) byStatus[row._id] = row.count;
   }
+  const total = grouped.reduce((sum, row) => sum + row.count, 0);
   const active = byStatus.Applied + byStatus["Followed up"];
   const activeTab = active + byStatus.Interview;
-  const due = activeDocs.map(toApp).filter((app) => dueState(app) !== null);
+  const due = dueDocs.map(toApp);
   return { total, active, activeTab, byStatus, due };
 }
 
@@ -275,21 +283,23 @@ export async function importApplications(inputs: unknown[]): Promise<ImportResul
 export async function updateApplication(id: string, input: unknown): Promise<App | null> {
   const current = await getApplication(id);
   if (!current) return null;
-  const draft = finalize(parse(input), current);
-  const updatedAt = Date.now();
-
+  const fields = parse(input);
+  const validated = finalize(fields, current);
+  // Write only editable fields and guard against concurrent changes.
+  const patch: Partial<Draft> = {};
+  for (const key of TEXT_FIELDS) {
+    if (key in fields) patch[key] = validated[key];
+  }
+  if (fields.status !== undefined) patch.status = validated.status;
+  if (validated.status !== "Rejected") patch.rejectReason = "";
   const collection = await getApplicationsCollection();
-  await collection.updateOne(
-    { _id: id },
-    {
-      $set: {
-        ...draft,
-        updatedAt,
-      },
-    }
+  const doc = await collection.findOneAndUpdate(
+    { _id: id, updatedAt: current.updatedAt },
+    { $set: { ...patch, updatedAt: Math.max(Date.now(), current.updatedAt + 1) } },
+    { returnDocument: "after" },
   );
-
-  return getApplication(id);
+  if (!doc) throw new Error("Application changed while saving. Refresh and try again.");
+  return toApp(doc);
 }
 
 export async function deleteApplication(id: string): Promise<boolean> {

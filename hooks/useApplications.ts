@@ -43,8 +43,13 @@ export function useApplications(params: Params) {
   const [loadError, setLoadError] = useState("");
   const requestId = useRef(0);
   const toast = useToast();
+  const summaryReady = useRef(false);
+  const controller = useRef<AbortController | null>(null);
 
-  const load = useCallback(async (): Promise<boolean> => {
+  const load = useCallback(async (refreshSummary = false): Promise<boolean> => {
+    controller.current?.abort();
+    const abortController = new AbortController();
+    controller.current = abortController;
     const currentRequest = ++requestId.current;
     const search = new URLSearchParams({
       query: params.query,
@@ -53,11 +58,12 @@ export function useApplications(params: Params) {
       sort: params.sort,
       page: String(params.page),
       pageSize: String(params.pageSize),
+      summary: String(refreshSummary || !summaryReady.current),
     });
     setLoading(true);
     setLoadError("");
     try {
-      const response = await fetch(`/api/applications?${search.toString()}`, { cache: "no-store" });
+      const response = await fetch(`/api/applications?${search.toString()}`, { cache: "no-store", signal: abortController.signal });
       if (!response.ok) {
         const body = (await response.json().catch(() => ({}))) as { error?: string };
         throw new Error(`Server error: ${body.error || "Could not load applications."}`);
@@ -65,11 +71,15 @@ export function useApplications(params: Params) {
       const data = (await response.json()) as ApplicationListResponse;
       if (currentRequest !== requestId.current) return false;
       setApps(data.items);
-      setSummary(data.summary);
+      if (data.summary) {
+        setSummary(data.summary);
+        summaryReady.current = true;
+      }
       setPagination(data.pagination);
       setLoadError("");
       return true;
     } catch (error) {
+      if (abortController.signal.aborted) return false;
       if (currentRequest === requestId.current) {
         const message = error instanceof TypeError
           ? "Network error. Check your connection and try again."
@@ -87,16 +97,22 @@ export function useApplications(params: Params) {
     }
   }, [params.page, params.pageSize, params.query, params.sort, params.source, params.status]);
 
+  const cancelLoad = useCallback(() => controller.current?.abort(), []);
+
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
-  }, [load]);
+    return () => {
+      window.clearTimeout(timer);
+      cancelLoad();
+    };
+  }, [load, cancelLoad]);
 
   const create = useCallback(
     async (draft: Draft): Promise<App | null> => {
       try {
         const created = (await apiRequest("POST", "/api/applications", draft)) as App;
-        await load();
+        summaryReady.current = false;
+        void load(true);
         return created;
       } catch (error) {
         toast("Could not save: " + (error as Error).message);
@@ -109,8 +125,10 @@ export function useApplications(params: Params) {
   const update = useCallback(
     async (id: string, patch: Partial<Draft>, successMsg?: string): Promise<boolean> => {
       try {
-        await apiRequest("PATCH", `/api/applications/${id}`, patch);
-        await load();
+        const updated = await apiRequest("PATCH", `/api/applications/${id}`, patch) as App;
+        setApps((items) => items.map((item) => item.id === id ? updated : item));
+        summaryReady.current = false;
+        void load(true);
         if (successMsg) toast(successMsg);
         return true;
       } catch (error) {
@@ -125,7 +143,9 @@ export function useApplications(params: Params) {
     async (id: string): Promise<boolean> => {
       try {
         await apiRequest("DELETE", `/api/applications/${id}`);
-        await load();
+        setApps((items) => items.filter((item) => item.id !== id));
+        summaryReady.current = false;
+        void load(true);
         return true;
       } catch (error) {
         toast("Could not delete: " + (error as Error).message);
@@ -135,5 +155,7 @@ export function useApplications(params: Params) {
     [load, toast],
   );
 
-  return { apps, summary, pagination, loaded, loading, error: loadError, retry: load, loadError, create, update, remove };
+  const retry = useCallback(() => load(true), [load]);
+
+  return { apps, summary, pagination, loaded, loading, error: loadError, retry, loadError, create, update, remove };
 }

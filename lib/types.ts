@@ -19,7 +19,7 @@ export type ApplicationListResponse = {
     total: number;
     totalPages: number;
   };
-  summary: ApplicationSummary;
+  summary?: ApplicationSummary;
 };
 
 export const SOURCES = ["Email", "Indeed", "Naukri", "LinkedIn", "Company site", "Infopark", "Referral", "Other"] as const;

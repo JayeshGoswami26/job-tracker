@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 const SORTS = new Set<ApplicationSort>(["updated", "applied", "followUp", "company"]);
 
 function integerParam(value: string | null, fallback: number, min: number, max: number) {
+  if (value === null || value.trim() === "") return fallback;
   const parsed = Number(value);
   return Number.isInteger(parsed) ? Math.min(Math.max(parsed, min), max) : fallback;
 }
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
         source,
         sort,
       }),
-      getApplicationSummary(),
+      url.searchParams.get("summary") === "false" ? undefined : getApplicationSummary(),
     ]);
     return NextResponse.json({
       items,
